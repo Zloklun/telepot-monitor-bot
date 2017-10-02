@@ -2,6 +2,7 @@
 
 import asyncio
 import config
+import signal
 import telepot
 import telepot.aio
 
@@ -28,7 +29,7 @@ class ChatBot(telepot.aio.helper.ChatHandler):
     def __init__(self, *args, **kwargs):
         super(ChatBot, self).__init__(*args, **kwargs)
         self.routes = {
-            '/random': self.random_number
+            '/random': self.random_number,
         }
         self.whitelist = None
         try:
@@ -102,10 +103,23 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
         pave_event_space()(
-                per_chat_id(), create_open, ChatBot, timeout=10
+                per_chat_id(), create_open, ChatBot, timeout=60 * 60
         )
 ])
 
+
+def sigterm(loop):
+    """Handler for SIGTERM"""
+    loop.remove_signal_handler(signal.SIGTERM)
+    if not loop.is_closed():
+        loop.close()
+
+
 loop = asyncio.get_event_loop()
 loop.create_task(MessageLoop(bot).run_forever())
-loop.run_forever()
+loop.add_signal_handler(signal.SIGTERM, sigterm, loop)
+try:
+    loop.run_forever()
+except:
+    if not loop.is_closed():
+        loop.close()
