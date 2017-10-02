@@ -1,3 +1,6 @@
 TOKEN
 whitelist_ids
 .idea/
+__pycache__/
+*.pyo
+*.pyc
