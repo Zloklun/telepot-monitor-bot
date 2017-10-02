@@ -27,6 +27,9 @@ if config.DEBUG:
 class ChatBot(telepot.aio.helper.ChatHandler):
     def __init__(self, *args, **kwargs):
         super(ChatBot, self).__init__(*args, **kwargs)
+        self.routes = {
+            '/random': self.random_number
+        }
         self.whitelist = None
         try:
             with open(config.WHITELIST_FILE) as f:
@@ -57,8 +60,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         cmd, *args = message.split()
         assert isinstance(cmd, str)
         cmd = cmd.lower()
-        if cmd == '/random':
-            await self.sender.sendMessage(self.random_number(cmd, *args))
+        if cmd in self.routes.keys():
+            await self.sender.sendMessage(self.routes[cmd](cmd, *args))
 
     def is_whitelisted(self, chat_id) -> bool:
         """Checks if chat_id is whitelisted"""
