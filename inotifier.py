@@ -12,8 +12,8 @@ class InotifyEventHandler(pyi.ProcessEvent):
         self.loop = loop if loop else aio.get_event_loop()
         self.bot = bot
 
-    async def process_event(self, event, event_name):
-        string = '{} at {}'.format(event_name, event.pathname)
+    async def process_event(self, event, prefix):
+        string = '**{}**: {}'.format(prefix, event.pathname)
         config.log(string, category='INOTIFY')
 
         async def job():
@@ -26,25 +26,28 @@ class InotifyEventHandler(pyi.ProcessEvent):
         misc.sync_exec(self.process_event(event, 'Default event'))
 
     def process_IN_ATTRIB(self, event):
-        misc.sync_exec(self.process_event(event, 'IN_ATTRIB'))
+        misc.sync_exec(self.process_event(event, 'Attributes modified'))
 
     def process_IN_CREATE(self, event):
-        misc.sync_exec(self.process_event(event, 'IN_CREATE'))
+        misc.sync_exec(self.process_event(event, 'Created'))
 
     def process_IN_CLOSE_WRITE(self, event):
-        misc.sync_exec(self.process_event(event, 'IN_CLOSE_WRITE'))
+        misc.sync_exec(self.process_event(event, 'Wrote and closed'))
 
     def process_IN_DELETE(self, event):
-        misc.sync_exec(self.process_event(event, 'IN_DELETE'))
+        misc.sync_exec(self.process_event(event, 'Deleted'))
 
     def process_IN_MODIFY(self, event):
-        misc.sync_exec(self.process_event(event, 'IN_MODIFY'))
+        misc.sync_exec(self.process_event(event, 'Modified'))
+
+    def process_IN_MOVE_SELF(self, event):  # TODO: Reloading
+        misc.sync_exec(self.process_event(event, 'Moved'))
 
 
 async def inotify_start(loop, files, bot=None, event_mask=None):
     event_mask = event_mask or \
                       pyi.IN_MODIFY | pyi.IN_ATTRIB | pyi.IN_CLOSE_WRITE | \
-                      pyi.IN_DELETE | pyi.IN_CREATE
+                      pyi.IN_DELETE | pyi.IN_CREATE | pyi.IN_MOVE_SELF
     wm = pyi.WatchManager()
     wm.add_watch(files, event_mask)
     handler = InotifyEventHandler(loop=loop, bot=bot)
