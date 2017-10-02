@@ -7,7 +7,10 @@ import telepot
 import telepot.aio
 
 from telepot.aio.loop import MessageLoop
-from telepot.aio.delegate import pave_event_space, per_chat_id_in, create_open
+from telepot.aio.delegate import pave_event_space, \
+    per_chat_id_in, \
+    per_chat_id, \
+    create_open
 
 
 def log(*args, **kwargs):
@@ -93,7 +96,7 @@ except IOError:
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
         pave_event_space()(
-                per_chat_id_in(whitelist, types=['private']),
+                per_chat_id_in(whitelist) if whitelist else per_chat_id(),
                 create_open,
                 ChatBot,
                 timeout=60 * 60
@@ -106,7 +109,6 @@ def signal_handler(loop):
     log('Caught SIGTERM', category='SHUTDOWN')
     loop.remove_signal_handler(signal.SIGTERM)
     loop.remove_signal_handler(signal.SIGINT)
-    loop.remove_signal_handler(signal.SIGKILL)
     task.cancel()
     loop.stop()
 
@@ -116,5 +118,4 @@ message_loop = MessageLoop(bot)
 task = loop.create_task(message_loop.run_forever())
 loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
-loop.add_signal_handler(signal.SIGKILL, signal_handler, loop)
 loop.run_forever()
