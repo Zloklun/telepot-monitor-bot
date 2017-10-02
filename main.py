@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 
+import asyncio
 import telepot
-import time
+import telepot.aio
 
 from os.path import join, dirname
-from telepot.loop import MessageLoop
+from telepot.aio.loop import MessageLoop
+from telepot.aio.delegate import pave_event_space, per_chat_id, create_open
 
 token = open(join(dirname(__file__), 'TOKEN')).read().strip()
-bot = telepot.Bot(token)
+bot = telepot.aio.Bot(token)
 
 whitelist = None
 try:
@@ -50,24 +52,23 @@ def random_number(msg):
         return __doc__
 
 
-def handle_message(msg):
+async def handle_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     print(content_type, chat_type, chat_id)
     print(msg)
 
     if whitelist is not None and msg['from']['id'] not in whitelist:
         print('Unrecognized chat_id. Drop')
-        bot.sendMessage(chat_id, 'Not in whitelist')
-        return
+        await bot.sendMessage(chat_id, 'Not in whitelist')
 
-    if content_type == 'text':
+    elif content_type == 'text':
         if msg['text'].startswith('/random'):
-            bot.sendMessage(chat_id, random_number(msg['text']))
+            await bot.sendMessage(chat_id, random_number(msg['text']))
         else:
-            bot.sendMessage(chat_id, msg['text'])
+            await bot.sendMessage(chat_id, msg['text'])
 
-MessageLoop(bot, handle_message).run_as_thread()
 
-while True:
-    time.sleep(10)
+loop = asyncio.get_event_loop()
+loop.create_task(MessageLoop(bot, handle_message).run_forever())
 
+loop.run_forever()
