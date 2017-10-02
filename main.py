@@ -1,74 +1,104 @@
 #!/usr/bin/python3
 
 import asyncio
+import config
 import telepot
 import telepot.aio
 
-from os.path import join, dirname
 from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, per_chat_id, create_open
 
-token = open(join(dirname(__file__), 'TOKEN')).read().strip()
-bot = telepot.aio.Bot(token)
 
-whitelist = None
-try:
-    with open(join(dirname(__file__), 'whitelist_ids')) as f:
-        whitelist = list(map(int, f.read().split()))
-    print('Whitelist:', whitelist)
-except IOError:
-    print('Whitelist not found')
+def log(*args, **kwargs):
+    """Placeholder for log()"""
+    pass
 
 
-def random_number(msg):
-    __doc__ = """Syntax: /random [start] [end]"""
-    import random
-    cmd = msg.split()
-    if not cmd or cmd[0] != '/random':
-        return 'Wrong command'
-    elif len(cmd) == 1:
-        return str(random.random())
-    elif len(cmd) == 2:
-        _, arg = cmd
-        if arg == 'help':
-            return __doc__
+if config.DEBUG:
+    from sys import stderr
+
+    def log(*args, **kwargs):
+        """Print debug messages"""
+        category = kwargs.get('category', None)
+        tag = '[{}] '.format(category) if category else ''
+        print(tag, *args, file=stderr)
+
+
+class ChatBot(telepot.aio.helper.ChatHandler):
+    def __init__(self, *args, **kwargs):
+        super(ChatBot, self).__init__(*args, **kwargs)
+        self.whitelist = None
         try:
-            arg = int(arg)
-            return random.randint(1, arg)
-        except ValueError:
-            return 'Wrong command.\n' + __doc__
-    elif len(cmd) == 3:
-        try:
-            _, a, b = cmd
-            a = int(a)
-            b = int(b)
-            if a > b:
-                return __doc__
-            else:
-                return random.randint(a, b)
-        except ValueError:
-            return __doc__
-    else:
-        return __doc__
+            with open(config.WHITELIST_FILE) as f:
+                whitelist = list(map(int, f.read().split()))
+            log('Whitelist:', whitelist)
+        except IOError:
+            log('Whitelist not found. Filtering is off')
 
+    async def on_chat_message(self, msg):
+        content_type, chat_type, chat_id = telepot.glance(msg)
+        log(content_type, chat_type, chat_id)
+        log(msg)
 
-async def handle_message(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    print(content_type, chat_type, chat_id)
-    print(msg)
+        if not self.is_whitelisted(msg['from']['id']):
+            log('Unrecognized chat_id. Drop')
+            await self.sender.sendMessage(chat_id, 'Not in whitelist')
+            return
 
-    if whitelist is not None and msg['from']['id'] not in whitelist:
-        print('Unrecognized chat_id. Drop')
-        await bot.sendMessage(chat_id, 'Not in whitelist')
-
-    elif content_type == 'text':
-        if msg['text'].startswith('/random'):
-            await bot.sendMessage(chat_id, random_number(msg['text']))
+        if content_type == 'text':
+            if msg['text'].startswith('/'):
+                await self.route_command(msg['text'])
         else:
-            await bot.sendMessage(chat_id, msg['text'])
+            await self.sender.sendMessage('Unsupported content_type')
 
+    async def route_command(self, message: str):
+        cmd, *args = message.split()
+        assert isinstance(cmd, str)
+        cmd = cmd.lower()
+        if cmd == '/random':
+            await self.sender.sendMessage(self.random_number(cmd, *args))
+
+    def is_whitelisted(self, chat_id):
+        if self.whitelist is None:
+            return True
+        return chat_id in self.whitelist
+
+    def random_number(self, cmd, *args):
+        usage = """Syntax: {} [start] [end]""".format(cmd)
+        import random
+        if len(args) == 0:
+            return str(random.random())
+        elif len(args) == 1:
+            arg = args[0]
+            if arg == 'help':
+                return usage
+            try:
+                arg = int(arg)
+                return random.randint(1, arg)
+            except ValueError:
+                return 'Wrong command.\n' + usage
+        elif len(args) == 2:
+            try:
+                a, b = args
+                a = int(a)
+                b = int(b)
+                if a > b:
+                    return usage
+                else:
+                    return random.randint(a, b)
+            except ValueError:
+                return usage
+        else:
+            return usage
+
+
+token = open(config.TOKEN_FILE).read().strip()
+bot = telepot.aio.DelegatorBot(token, [
+        pave_event_space()(
+                per_chat_id(), create_open, ChatBot, timeout=10
+        )
+])
 
 loop = asyncio.get_event_loop()
-loop.create_task(MessageLoop(bot, handle_message).run_forever())
-
+loop.create_task(MessageLoop(bot).run_forever())
 loop.run_forever()
