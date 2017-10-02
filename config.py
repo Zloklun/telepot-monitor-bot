@@ -21,3 +21,12 @@ if DEBUG:
         tag = '[{}] '.format(category) if category else ''
         print(tag, *args, file=stderr)
 
+
+WHITELIST = None
+try:
+    with open(WHITELIST_FILE) as f:
+        WHITELIST = list(map(int, f.read().split()))
+        log('Whitelist:', WHITELIST)
+except IOError:
+    log('Whitelist not found. Filtering is off')
+

@@ -34,9 +34,6 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         else:
             await self.sender.sendMessage('Unsupported content_type')
 
-    async def on_inotify(self, event):
-        await self.sender.sendMessage(event.pathname)
-
     async def route_command(self, message: str):
         """Routes command to appropriate function"""
         cmd, *args = message.split()
@@ -75,24 +72,16 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             return usage
 
 
-whitelist = None
-try:
-    with open(config.WHITELIST_FILE) as f:
-        whitelist = list(map(int, f.read().split()))
-        config.log('Whitelist:', whitelist)
-except IOError:
-    config.log('Whitelist not found. Filtering is off')
 
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
         pave_event_space()(
-                per_chat_id_in(whitelist) if whitelist else per_chat_id(),
+                per_chat_id_in(config.WHITELIST) if config.WHITELIST else per_chat_id(),
                 create_open,
                 ChatBot,
                 timeout=60 * 60
         )
 ])
-
 
 def signal_handler(loop):
     """Handler for SIGTERM"""
@@ -110,6 +99,6 @@ loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
 message_loop = MessageLoop(bot)
 task_msg = loop.create_task(message_loop.run_forever())
-task_ino = loop.create_task(inotifier.inotify_start(loop, ["/mnt/zram/test"]))
+task_ino = loop.create_task(inotifier.inotify_start(loop, ["/mnt/zram/test"], bot))
 
 loop.run_forever()
