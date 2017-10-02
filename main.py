@@ -36,6 +36,7 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             log('Whitelist not found. Filtering is off')
 
     async def on_chat_message(self, msg):
+        """Handles chat message"""
         content_type, chat_type, chat_id = telepot.glance(msg)
         log(content_type, chat_type, chat_id)
         log(msg)
@@ -52,18 +53,21 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             await self.sender.sendMessage('Unsupported content_type')
 
     async def route_command(self, message: str):
+        """Routes command to appropriate function"""
         cmd, *args = message.split()
         assert isinstance(cmd, str)
         cmd = cmd.lower()
         if cmd == '/random':
             await self.sender.sendMessage(self.random_number(cmd, *args))
 
-    def is_whitelisted(self, chat_id):
+    def is_whitelisted(self, chat_id) -> bool:
+        """Checks if chat_id is whitelisted"""
         if self.whitelist is None:
             return True
         return chat_id in self.whitelist
 
     def random_number(self, cmd, *args):
+        """Returns random number"""
         usage = """Syntax: {} [start] [end]""".format(cmd)
         import random
         if len(args) == 0:
