@@ -7,7 +7,7 @@ import telepot
 import telepot.aio
 
 from telepot.aio.loop import MessageLoop
-from telepot.aio.delegate import pave_event_space, per_chat_id, create_open
+from telepot.aio.delegate import pave_event_space, per_chat_id_in, create_open
 
 
 def log(*args, **kwargs):
@@ -31,24 +31,12 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         self.routes = {
             '/random': self.random_number,
         }
-        self.whitelist = None
-        try:
-            with open(config.WHITELIST_FILE) as f:
-                whitelist = list(map(int, f.read().split()))
-            log('Whitelist:', whitelist)
-        except IOError:
-            log('Whitelist not found. Filtering is off')
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type, chat_type, chat_id = telepot.glance(msg)
         log(content_type, chat_type, chat_id)
         log(msg)
-
-        if not self.is_whitelisted(msg['from']['id']):
-            log('Unrecognized chat_id. Drop')
-            await self.sender.sendMessage(chat_id, 'Not in whitelist')
-            return
 
         if content_type == 'text':
             if msg['text'].startswith('/'):
@@ -63,12 +51,6 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         cmd = cmd.lower()
         if cmd in self.routes.keys():
             await self.sender.sendMessage(self.routes[cmd](cmd, *args))
-
-    def is_whitelisted(self, chat_id) -> bool:
-        """Checks if chat_id is whitelisted"""
-        if self.whitelist is None:
-            return True
-        return chat_id in self.whitelist
 
     def random_number(self, cmd, *args):
         """Returns random number"""
@@ -100,26 +82,39 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             return usage
 
 
+whitelist = None
+try:
+    with open(config.WHITELIST_FILE) as f:
+        whitelist = list(map(int, f.read().split()))
+    log('Whitelist:', whitelist)
+except IOError:
+    log('Whitelist not found. Filtering is off')
+
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
         pave_event_space()(
-                per_chat_id(), create_open, ChatBot, timeout=60 * 60
+                per_chat_id_in(whitelist, types=['private']),
+                create_open,
+                ChatBot,
+                timeout=60 * 60
         )
 ])
 
 
-def sigterm(loop):
+def signal_handler(loop):
     """Handler for SIGTERM"""
+    log('Caught SIGTERM', category='SHUTDOWN')
     loop.remove_signal_handler(signal.SIGTERM)
-    if not loop.is_closed():
-        loop.close()
+    loop.remove_signal_handler(signal.SIGINT)
+    loop.remove_signal_handler(signal.SIGKILL)
+    task.cancel()
+    loop.stop()
 
 
 loop = asyncio.get_event_loop()
-loop.create_task(MessageLoop(bot).run_forever())
-loop.add_signal_handler(signal.SIGTERM, sigterm, loop)
-try:
-    loop.run_forever()
-except:
-    if not loop.is_closed():
-        loop.close()
+message_loop = MessageLoop(bot)
+task = loop.create_task(message_loop.run_forever())
+loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
+loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
+loop.add_signal_handler(signal.SIGKILL, signal_handler, loop)
+loop.run_forever()
