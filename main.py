@@ -48,7 +48,7 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
     def random_number(self, cmd, *args):
         """Returns random number"""
-        usage = """Syntax: {} [start] [end]""".format(cmd)
+        usage = """Usage: *{}* [start] [end]""".format(cmd)
         import random
         if len(args) == 0:
             return str(random.random())
@@ -77,7 +77,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
     def uptime(self, cmd, *args):
         """Uptime info"""
-        usage = "*Usage*: /uptime [units], where supported units are " \
+        usage = "Usage: *{}* [units]\n".format(cmd) \
+                "Supported units are " \
                 "sec, min, hour, days and weeks (only first letter considered)"
         if not args:
             args = ['d']
