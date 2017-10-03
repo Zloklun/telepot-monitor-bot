@@ -35,7 +35,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         if content_type == 'text':
             await self.route_command(msg['text'])
         else:
-            await self.sender.sendMessage('Unsupported content_type')
+            await self.sender.sendMessage('Unsupported content_type ' +
+                                          content_type)
 
     async def route_command(self, message: str):
         """Routes command to appropriate function"""
@@ -74,8 +75,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         elif len(args) == 2:
             try:
                 a, b = args
-                a = int(a)
-                b = int(b)
+                a = int(float(a))
+                b = int(float(b))
                 if a > b:
                     return usage
                 else:
@@ -122,9 +123,11 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
     pave_event_space()(
-            per_chat_id_in(config.WHITELIST) if config.WHITELIST else per_chat_id(),
+            per_chat_id_in(config.WHITELIST) if config.WHITELIST
+            else per_chat_id(),
             create_open,
-            ChatBot
+            ChatBot,
+            timeout=10,
     )
 ])
 
