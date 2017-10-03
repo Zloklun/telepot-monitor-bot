@@ -7,13 +7,13 @@ import telepot.aio
 
 from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, \
-    per_chat_id_in, \
-    per_chat_id, \
+    per_from_id_in, \
+    per_from_id, \
     create_open
 
-import config
 import inotifier
 import loadavg
+import misc
 
 
 class ChatBot(telepot.aio.helper.ChatHandler):
@@ -29,8 +29,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type, chat_type, chat_id = telepot.glance(msg)
-        config.log(content_type, chat_type, chat_id)
-        config.log(msg)
+        misc.log(content_type, chat_type, chat_id)
+        misc.log(msg)
 
         if content_type == 'text':
             await self.route_command(msg['text'])
@@ -120,21 +120,21 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         return usage
 
 
-token = open(config.TOKEN_FILE).read().strip()
+token = open(misc.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
     pave_event_space()(
-            per_chat_id_in(config.WHITELIST) if config.WHITELIST
-            else per_chat_id(),
+            per_from_id_in(misc.WHITELIST) if misc.WHITELIST
+            else per_from_id(),
             create_open,
             ChatBot,
-            timeout=10,
+            timeout=10
     )
 ])
 
 
 def signal_handler(loop):
     """Handler for SIGTERM"""
-    config.log('Caught SIGTERM', category='SHUTDOWN')
+    misc.log('Caught SIGTERM', category='SHUTDOWN')
     loop.remove_signal_handler(signal.SIGTERM)
     loop.remove_signal_handler(signal.SIGINT)
     task_msg.cancel()
