@@ -53,8 +53,8 @@ class InotifyEventHandler(pyi.ProcessEvent):
 async def inotify_start(loop, files, bot=None, event_mask=None):
     from os.path import dirname
     event_mask = event_mask or \
-                      pyi.IN_MODIFY | pyi.IN_ATTRIB | pyi.IN_CLOSE_WRITE | \
-                      pyi.IN_DELETE | pyi.IN_CREATE | pyi.IN_MOVE_SELF
+                 pyi.IN_MODIFY | pyi.IN_ATTRIB | pyi.IN_CLOSE_WRITE | \
+                 pyi.IN_DELETE | pyi.IN_CREATE | pyi.IN_MOVE_SELF
     wm = pyi.WatchManager()
     watches = wm.add_watch(
             list(set(map(dirname, files))),
