@@ -31,4 +31,3 @@ try:
         log('Whitelist:', WHITELIST)
 except IOError:
     log('Whitelist not found. Filtering is off')
-
