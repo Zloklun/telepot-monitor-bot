@@ -20,6 +20,7 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         super(ChatBot, self).__init__(*args, **kwargs)
         self.routes = {
             '/random': self.random_number,
+            '/uptime': self.uptime,
         }
 
     async def on_chat_message(self, msg):
@@ -40,7 +41,10 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         assert isinstance(cmd, str)
         cmd = cmd.lower()
         if cmd in self.routes.keys():
-            await self.sender.sendMessage(self.routes[cmd](cmd, *args))
+            await self.sender.sendMessage(
+                    self.routes[cmd](cmd, *args),
+                    parse_mode='Markdown'
+            )
 
     def random_number(self, cmd, *args):
         """Returns random number"""
@@ -70,6 +74,37 @@ class ChatBot(telepot.aio.helper.ChatHandler):
                 return usage
         else:
             return usage
+
+    def uptime(self, cmd, *args):
+        """Uptime info"""
+        usage = "*Usage*: /uptime [units], where supported units are " \
+                "sec, min, hour, days and weeks (only first letter considered)"
+        if not args:
+            args = ['d']
+        if args and args[0][0].lower() in 'smhdw':
+            seconds = float(open('/proc/uptime').read().split()[0])
+            unit = args[0][0].lower()
+            full_units = {
+                's': 'seconds',
+                'm': 'minutes',
+                'h': 'hours',
+                'd': 'days',
+                'w': 'weeks',
+            }
+            if unit == 's':
+                value = seconds
+            elif unit == 'm':
+                value = seconds / 60
+            elif unit == 'h':
+                value = seconds / 3600
+            elif unit == 'd':
+                value = seconds / 3600 / 24
+            elif unit == 'w':
+                value = seconds / 3600 / 24 / 7
+            else:
+                return usage
+            return "*Uptime*: {:.3f} {}".format(value, full_units[unit])
+        return usage
 
 
 token = open(config.TOKEN_FILE).read().strip()
