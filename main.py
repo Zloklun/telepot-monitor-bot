@@ -16,40 +16,53 @@ import loadavg
 import misc
 
 
-token = open(misc.TOKEN_FILE).read().strip()
-bot = telepot.aio.DelegatorBot(token, [
-    pave_event_space()(
-            per_from_id_in(misc.WHITELIST) if misc.WHITELIST
-            else per_from_id(),
-            create_open,
-            chatbot.ChatBot,
-            timeout=10
-    )
-])
+class BotManager:
+    def __init__(self, loop=None):
+        self.loop = loop or aio.get_event_loop()
+        self.token = open(misc.TOKEN_FILE).read().strip()
+        self.bot = telepot.aio.DelegatorBot(self.token, [
+            pave_event_space()(
+                    per_from_id_in(misc.WHITELIST) if misc.WHITELIST
+                    else per_from_id(),
+                    create_open,
+                    chatbot.ChatBot,
+                    timeout=10
+            )
+        ])
+        self.message_loop = MessageLoop(self.bot)
+        self.tasks = []
+
+    async def run_forever(self):
+        self.tasks.append(self.loop.create_task(
+                self.message_loop.run_forever()
+        ))
+        self.tasks.append(self.loop.create_task(
+                loadavg.LoadavgNotifier(1, (5, 3, 1)).run()
+        ))
+        self.tasks.append(self.loop.create_task(
+                inotifier.inotify_start(self.loop, [
+                    "/var/log/auth.log",
+                ], self.bot)
+        ))
+
+    def cancel(self):
+        for task in self.tasks:
+            task.cancel()
 
 
-def signal_handler(loop):
+def signal_handler(event_loop):
     """Handler for SIGTERM"""
     misc.log('Caught SIGTERM', category='SHUTDOWN')
-    loop.remove_signal_handler(signal.SIGTERM)
-    loop.remove_signal_handler(signal.SIGINT)
-    task_msg.cancel()
-    task_ino.cancel()
-    task_lav.cancel()
-    loop.stop()
+    event_loop.remove_signal_handler(signal.SIGTERM)
+    event_loop.remove_signal_handler(signal.SIGINT)
+    event_loop.stop()
 
 
 loop = aio.get_event_loop()
 loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
-message_loop = MessageLoop(bot)
-task_msg = loop.create_task(message_loop.run_forever())
-task_ino = loop.create_task(
-        inotifier.inotify_start(loop, [
-            "/mnt/zram/test/test",
-        ], bot)
-)
-task_lav = loop.create_task(loadavg.LoadavgNotifier(1, (5, 3, 1)).run())
+bm = BotManager(loop)
+loop.create_task(bm.run_forever())
 
 loop.run_forever()
