@@ -10,27 +10,23 @@ class InotifyEventHandler(pyi.ProcessEvent):
     def my_init(self, files=[], bot=None):
         self.bot = bot
         self.files = files
-        config.log('Watched files: ',
+        config.log('Watched files:',
                    files,
                    category='InotifyEventHandler::my_init')
 
     async def process_event(self, event, prefix):
-        string = '[{}]: {}'.format(prefix, event.pathname)
-
         async def job():
             if self.bot:
+                text = 'Inotify\nFile *{}*\n{}'.format(event.pathname, prefix)
                 for chat_id in config.WHITELIST:
-                    await self.bot.sendMessage(chat_id, text=string)
+                    await self.bot.sendMessage(chat_id,
+                                               text=text,
+                                               parse_mode="Markdown")
+
         if event.pathname in self.files:
-            config.log('PROCESSED',
-                       string,
+            config.log('[{}]: {}'.format(prefix, event.pathname),
                        category='InotifyEventHandler::process_event')
             return await job()
-        else:
-            config.log('NOT processed',
-                       string,
-                       category='InotifyEventHandler::process_event')
-            return None
 
     def process_default(self, event):
         misc.sync_exec(self.process_event(event, 'Default event'))
