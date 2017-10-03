@@ -83,6 +83,7 @@ bot = telepot.aio.DelegatorBot(token, [
         )
 ])
 
+
 def signal_handler(loop):
     """Handler for SIGTERM"""
     config.log('Caught SIGTERM', category='SHUTDOWN')
@@ -99,6 +100,11 @@ loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
 message_loop = MessageLoop(bot)
 task_msg = loop.create_task(message_loop.run_forever())
-task_ino = loop.create_task(inotifier.inotify_start(loop, ["/mnt/zram/test/test"], bot))
+task_ino = loop.create_task(
+        inotifier.inotify_start(loop, [
+            "/mnt/zram/test/test",
+            "/var/log/cgred.log",
+        ], bot)
+)
 
 loop.run_forever()

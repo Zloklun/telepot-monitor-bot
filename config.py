@@ -17,10 +17,12 @@ if DEBUG:
 
     def log(*args, **kwargs):
         """Print debug messages"""
-        category = kwargs.get('category', None)
-        tag = '[{}] '.format(category) if category else ''
-        print(tag, *args, file=stderr)
-
+        if 'category' in kwargs:
+            tag = '[{}]'.format(kwargs['category']) if kwargs['category'] else ''
+            del kwargs['category']
+            print(tag, *args, file=stderr)
+        else:
+            print(*args, file=stderr)
 
 WHITELIST = None
 try:
