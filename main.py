@@ -19,6 +19,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
     def __init__(self, *args, **kwargs):
         super(ChatBot, self).__init__(*args, **kwargs)
         self.routes = {
+            '/start': self.start,
+            '/help': self.start,
             '/random': self.random_number,
             '/uptime': self.uptime,
         }
@@ -46,9 +48,14 @@ class ChatBot(telepot.aio.helper.ChatHandler):
                     parse_mode='Markdown'
             )
 
+    def start(self, cmd, *args):
+        return "Available commands are:\n" \
+               " /random \[start] \[end]    Prints random number\n" \
+               " /uptime \[units]          Prints uptime\n"
+
     def random_number(self, cmd, *args):
         """Returns random number"""
-        usage = """Usage: *{}* [start] [end]""".format(cmd)
+        usage = """Usage: *{}* \[start] \[end]""".format(cmd)
         import random
         if len(args) == 0:
             return str(random.random())
@@ -77,12 +84,13 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
     def uptime(self, cmd, *args):
         """Uptime info"""
-        usage = "Usage: *{}* [units]\n".format(cmd) \
+        usage = "Usage: {} \[units]\n" \
                 "Supported units are " \
-                "sec, min, hour, days and weeks (only first letter considered)"
+                "sec, min, hour, days and weeks " \
+                "(only first letter considered)".format(cmd)
         if not args:
             args = ['d']
-        if args and args[0][0].lower() in 'smhdw':
+        if args and args[0][0].lower() in 'smhdw' and args[0] != 'help':
             seconds = float(open('/proc/uptime').read().split()[0])
             unit = args[0][0].lower()
             full_units = {
@@ -138,7 +146,6 @@ task_msg = loop.create_task(message_loop.run_forever())
 task_ino = loop.create_task(
         inotifier.inotify_start(loop, [
             "/mnt/zram/test/test",
-            "/var/log/cgred.log",
         ], bot)
 )
 
