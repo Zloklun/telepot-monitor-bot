@@ -72,7 +72,6 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             return usage
 
 
-
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
         pave_event_space()(
