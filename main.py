@@ -13,6 +13,7 @@ from telepot.aio.delegate import pave_event_space, \
 
 import config
 import inotifier
+import loadavg
 
 
 class ChatBot(telepot.aio.helper.ChatHandler):
@@ -34,7 +35,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         if content_type == 'text':
             await self.route_command(msg['text'])
         else:
-            await self.sender.sendMessage('Unsupported content_type')
+            await self.sender.sendMessage('Unsupported content_type ' +
+                                          content_type)
 
     async def route_command(self, message: str):
         """Routes command to appropriate function"""
@@ -73,8 +75,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         elif len(args) == 2:
             try:
                 a, b = args
-                a = int(a)
-                b = int(b)
+                a = int(float(a))
+                b = int(float(b))
                 if a > b:
                     return usage
                 else:
@@ -120,12 +122,13 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
-        pave_event_space()(
-                per_chat_id_in(config.WHITELIST) if config.WHITELIST else per_chat_id(),
-                create_open,
-                ChatBot,
-                timeout=60 * 60
-        )
+    pave_event_space()(
+            per_chat_id_in(config.WHITELIST) if config.WHITELIST
+            else per_chat_id(),
+            create_open,
+            ChatBot,
+            timeout=10,
+    )
 ])
 
 
@@ -136,6 +139,7 @@ def signal_handler(loop):
     loop.remove_signal_handler(signal.SIGINT)
     task_msg.cancel()
     task_ino.cancel()
+    task_lav.cancel()
     loop.stop()
 
 
@@ -150,5 +154,6 @@ task_ino = loop.create_task(
             "/mnt/zram/test/test",
         ], bot)
 )
+task_lav = loop.create_task(loadavg.LoadavgNotifier(1, (5, 3, 1)).run())
 
 loop.run_forever()
