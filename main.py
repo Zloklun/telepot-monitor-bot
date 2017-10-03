@@ -32,8 +32,7 @@ class ChatBot(telepot.aio.helper.ChatHandler):
         config.log(msg)
 
         if content_type == 'text':
-            if msg['text'].startswith('/'):
-                await self.route_command(msg['text'])
+            await self.route_command(msg['text'])
         else:
             await self.sender.sendMessage('Unsupported content_type')
 
@@ -47,6 +46,9 @@ class ChatBot(telepot.aio.helper.ChatHandler):
                     self.routes[cmd](cmd, *args),
                     parse_mode='Markdown'
             )
+        else:
+            await self.sender.sendMessage('Wrong command')
+            await self.route_command('/help')
 
     def start(self, cmd, *args):
         return "Available commands are:\n" \
