@@ -121,12 +121,11 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
-        pave_event_space()(
-                per_chat_id_in(config.WHITELIST) if config.WHITELIST else per_chat_id(),
-                create_open,
-                ChatBot,
-                timeout=60 * 60
-        )
+    pave_event_space()(
+            per_chat_id_in(config.WHITELIST) if config.WHITELIST else per_chat_id(),
+            create_open,
+            ChatBot
+    )
 ])
 
 

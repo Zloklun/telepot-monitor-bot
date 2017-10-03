@@ -45,8 +45,6 @@ class LoadavgNotifier:
                     lambda x: float(x) / self.cpus,
                     [t1, t5, t15]
             )
-            log('Iteration', (t1, t5, t15), category='LoadavgNotifier')
-
             if (t15, t5, t1) >= self.threshold:
                 self.callback((t1, t5, t15))
             await aio.sleep(self.timeout)
