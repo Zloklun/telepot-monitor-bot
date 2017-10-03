@@ -13,6 +13,7 @@ from telepot.aio.delegate import pave_event_space, \
 
 import config
 import inotifier
+import loadavg
 
 
 class ChatBot(telepot.aio.helper.ChatHandler):
@@ -136,6 +137,7 @@ def signal_handler(loop):
     loop.remove_signal_handler(signal.SIGINT)
     task_msg.cancel()
     task_ino.cancel()
+    task_lav.cancel()
     loop.stop()
 
 
@@ -150,5 +152,6 @@ task_ino = loop.create_task(
             "/mnt/zram/test/test",
         ], bot)
 )
+task_lav = loop.create_task(loadavg.LoadavgNotifier(1, (5, 3, 1)).run())
 
 loop.run_forever()
