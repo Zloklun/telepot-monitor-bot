@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
-import asyncio
-import config
+import asyncio as aio
 import signal
 import telepot
 import telepot.aio
@@ -12,20 +11,8 @@ from telepot.aio.delegate import pave_event_space, \
     per_chat_id, \
     create_open
 
-
-def log(*args, **kwargs):
-    """Placeholder for log()"""
-    pass
-
-
-if config.DEBUG:
-    from sys import stderr
-
-    def log(*args, **kwargs):
-        """Print debug messages"""
-        category = kwargs.get('category', None)
-        tag = '[{}] '.format(category) if category else ''
-        print(tag, *args, file=stderr)
+import config
+import inotifier
 
 
 class ChatBot(telepot.aio.helper.ChatHandler):
@@ -38,8 +25,8 @@ class ChatBot(telepot.aio.helper.ChatHandler):
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type, chat_type, chat_id = telepot.glance(msg)
-        log(content_type, chat_type, chat_id)
-        log(msg)
+        config.log(content_type, chat_type, chat_id)
+        config.log(msg)
 
         if content_type == 'text':
             if msg['text'].startswith('/'):
@@ -85,18 +72,11 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             return usage
 
 
-whitelist = None
-try:
-    with open(config.WHITELIST_FILE) as f:
-        whitelist = list(map(int, f.read().split()))
-    log('Whitelist:', whitelist)
-except IOError:
-    log('Whitelist not found. Filtering is off')
 
 token = open(config.TOKEN_FILE).read().strip()
 bot = telepot.aio.DelegatorBot(token, [
         pave_event_space()(
-                per_chat_id_in(whitelist) if whitelist else per_chat_id(),
+                per_chat_id_in(config.WHITELIST) if config.WHITELIST else per_chat_id(),
                 create_open,
                 ChatBot,
                 timeout=60 * 60
@@ -106,16 +86,25 @@ bot = telepot.aio.DelegatorBot(token, [
 
 def signal_handler(loop):
     """Handler for SIGTERM"""
-    log('Caught SIGTERM', category='SHUTDOWN')
+    config.log('Caught SIGTERM', category='SHUTDOWN')
     loop.remove_signal_handler(signal.SIGTERM)
     loop.remove_signal_handler(signal.SIGINT)
-    task.cancel()
+    task_msg.cancel()
+    task_ino.cancel()
     loop.stop()
 
 
-loop = asyncio.get_event_loop()
-message_loop = MessageLoop(bot)
-task = loop.create_task(message_loop.run_forever())
+loop = aio.get_event_loop()
 loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
+
+message_loop = MessageLoop(bot)
+task_msg = loop.create_task(message_loop.run_forever())
+task_ino = loop.create_task(
+        inotifier.inotify_start(loop, [
+            "/mnt/zram/test/test",
+            "/var/log/cgred.log",
+        ], bot)
+)
+
 loop.run_forever()
