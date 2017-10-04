@@ -20,7 +20,7 @@ class InotifyEventHandler(pyi.ProcessEvent):
                 for chat_id in misc.WHITELIST:
                     await self.bot.sendMessage(chat_id,
                                                text=text,
-                                               parse_mode="Markdown")
+                                               parse_mode='Markdown')
 
         if event.pathname in self.files:
             misc.log('[{}]: {}'.format(prefix, event.pathname),

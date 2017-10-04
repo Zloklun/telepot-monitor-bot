@@ -37,7 +37,11 @@ class BotManager:
                 self.message_loop.run_forever()
         ))
         self.tasks.append(self.loop.create_task(
-                loadavg.LoadavgNotifier(1, (5, 3, 1)).run()
+                loadavg.LoadavgNotifier(
+                        timeout=1,
+                        threshold=(0.5, 0.5, 0.5),
+                        callback=lambda s: self.bot.sender.sendMessage(s),
+                ).run()
         ))
         self.tasks.append(self.loop.create_task(
                 inotifier.inotify_start(self.loop, [

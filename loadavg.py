@@ -10,7 +10,7 @@ def default_callback(loadavg):
 
 
 class LoadavgNotifier:
-    def __init__(self, timeout, threshold, callback=None):
+    def __init__(self, timeout, threshold=None, callback=None):
         """
         Initialise instance
         :param timeout: Timeout in seconds
@@ -23,7 +23,7 @@ class LoadavgNotifier:
         self.timeout = timeout  # in seconds
 
         # Reversing because we need it reversed
-        self.threshold = list(threshold)
+        self.threshold = list(threshold or (1, 1, 1))
         self.threshold.reverse()
         self.threshold = tuple(self.threshold)
 
@@ -46,6 +46,7 @@ class LoadavgNotifier:
                     [t1, t5, t15]
             )
             if (t15, t5, t1) >= self.threshold:
+                log('Emitted', category='LoadavgNotifier')
                 self.callback((t1, t5, t15))
             await aio.sleep(self.timeout)
         log('Stopped', category='LoadavgNotifier')

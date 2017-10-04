@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 
-import telepot
+from telepot.aio.helper import ChatHandler
+from telepot import glance
 
 import misc
 
 
-class ChatBot(telepot.aio.helper.ChatHandler):
+class ChatBot(ChatHandler):
     def __init__(self, *args, **kwargs):
         super(ChatBot, self).__init__(*args, **kwargs)
         self.routes = {
@@ -17,7 +18,7 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
-        content_type, chat_type, chat_id = telepot.glance(msg)
+        content_type, chat_type, chat_id = glance(msg)
         misc.log(content_type, chat_type, chat_id)
         misc.log(msg)
 
@@ -42,13 +43,13 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             await self.route_command('/help')
 
     def start(self, cmd, *args):
-        return "Available commands are:\n" \
-               " /random \[start] \[end]    Prints random number\n" \
-               " /uptime \[units]          Prints uptime\n"
+        return 'Available commands are:\n' \
+               ' /random \[start] \[end]    Prints random number\n' \
+               ' /uptime \[units]          Prints uptime\n'
 
     def random_number(self, cmd, *args):
         """Returns random number"""
-        usage = """Usage: *{}* \[start] \[end]""".format(cmd)
+        usage = 'Usage: *{}* \[start] \[end]'.format(cmd)
         import random
         if len(args) == 0:
             return str(random.random())
@@ -77,10 +78,10 @@ class ChatBot(telepot.aio.helper.ChatHandler):
 
     def uptime(self, cmd, *args):
         """Uptime info"""
-        usage = "Usage: {} \[units]\n" \
-                "Supported units are " \
-                "sec, min, hour, days and weeks " \
-                "(only first letter considered)".format(cmd)
+        usage = 'Usage: {} \[units]\n' \
+                'Supported units are ' \
+                'sec, min, hour, days and weeks ' \
+                '(only first letter considered)'.format(cmd)
         if not args:
             args = ['d']
         if args and args[0][0].lower() in 'smhdw' and args[0] != 'help':
@@ -105,5 +106,5 @@ class ChatBot(telepot.aio.helper.ChatHandler):
                 value = seconds / 3600 / 24 / 7
             else:
                 return usage
-            return "*Uptime*: {:.3f} {}".format(value, full_units[unit])
+            return '*Uptime*: {:.3f} {}'.format(value, full_units[unit])
         return usage
