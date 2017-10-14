@@ -6,9 +6,9 @@ from telepot import glance
 import misc
 
 
-class ChatBot(ChatHandler):
+class AdminBot(ChatHandler):
     def __init__(self, *args, **kwargs):
-        super(ChatBot, self).__init__(*args, **kwargs)
+        super(AdminBot, self).__init__(*args, **kwargs)
         self.routes = {
             '/start': self.start,
             '/help': self.start,
@@ -23,23 +23,38 @@ class ChatBot(ChatHandler):
         misc.log(msg)
 
         if content_type == 'text':
-            await self.route_command(msg['text'])
+            if misc.WHITELIST and chat_id in misc.WHITELIST:
+                await self.route_command(chat_id, msg['text'])
+            else:
+                await self.route_command(chat_id, 'You are not whitelisted')
         else:
-            await self.sender.sendMessage('Unsupported content_type ' +
-                                          content_type)
+            await self.sendMessage(
+                    chat_id,
+                    'Unsupported content_type ' + content_type
+            )
 
-    async def route_command(self, message: str):
+    async def send_to_whitelist(self, message: str):
+        """Sends message to all chats in whitelist"""
+        if not misc.WHITELIST:
+            misc.log('Whitelist is empty', category='ChatBot::send_to_whitelist')
+            return False
+        for chat_id in misc.WHITELIST:
+            await self.sendMessage(chat_id, message, parse_mode='Markdown')
+            return True
+
+    async def route_command(self, chat_id, message: str):
         """Routes command to appropriate function"""
         cmd, *args = message.split()
         assert isinstance(cmd, str)
         cmd = cmd.lower()
         if cmd in self.routes.keys():
-            await self.sender.sendMessage(
+            await self.sendMessage(
+                    chat_id,
                     self.routes[cmd](cmd, *args),
                     parse_mode='Markdown'
             )
         else:
-            await self.sender.sendMessage('Wrong command')
+            await self.sendMessage(chat_id, 'Wrong command')
             await self.route_command('/help')
 
     def start(self, cmd, *args):

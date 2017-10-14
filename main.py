@@ -6,11 +6,10 @@ import telepot.aio
 
 from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, \
-    per_from_id_in, \
-    per_from_id, \
+    per_application, \
     create_open
 
-import chatbot
+import adminbot
 import inotifier
 import loadavg
 import misc
@@ -22,10 +21,9 @@ class BotManager:
         self.token = open(misc.TOKEN_FILE).read().strip()
         self.bot = telepot.aio.DelegatorBot(self.token, [
             pave_event_space()(
-                    per_from_id_in(misc.WHITELIST) if misc.WHITELIST
-                    else per_from_id(),
+                    per_application(),
                     create_open,
-                    chatbot.ChatBot,
+                    adminbot.AdminBot,
                     timeout=10
             )
         ])
@@ -40,13 +38,13 @@ class BotManager:
                 loadavg.LoadavgNotifier(
                         timeout=1,
                         threshold=(0.5, 0.5, 0.5),
-                        callback=lambda s: self.bot.sender.sendMessage(s),
+                        callback=self.bot.send_to_whitelist,
                 ).run()
         ))
         self.tasks.append(self.loop.create_task(
                 inotifier.inotify_start(self.loop, [
                     "/var/log/auth.log",
-                ], self.bot)
+                ], callback=self.bot.send_to_whitelist)
         ))
 
     def cancel(self):
@@ -68,5 +66,4 @@ loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
 bm = BotManager(loop)
 loop.create_task(bm.run_forever())
-
 loop.run_forever()

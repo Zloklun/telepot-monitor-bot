@@ -6,8 +6,8 @@ import misc
 
 
 class InotifyEventHandler(pyi.ProcessEvent):
-    def my_init(self, files=[], bot=None):
-        self.bot = bot
+    def my_init(self, files=[], callback=None):
+        self.callback = callback
         self.files = files
         misc.log('Watched files:',
                  files,
@@ -15,12 +15,10 @@ class InotifyEventHandler(pyi.ProcessEvent):
 
     async def process_event(self, event, prefix):
         async def job():
-            if self.bot:
+            if self.callback:
                 text = 'Inotify\nFile *{}*\n{}'.format(event.pathname, prefix)
                 for chat_id in misc.WHITELIST:
-                    await self.bot.sendMessage(chat_id,
-                                               text=text,
-                                               parse_mode='Markdown')
+                    await self.callback(text)
 
         if event.pathname in self.files:
             misc.log('[{}]: {}'.format(prefix, event.pathname),
@@ -49,7 +47,7 @@ class InotifyEventHandler(pyi.ProcessEvent):
         misc.sync_exec(self.process_event(event, 'Moved'))
 
 
-async def inotify_start(loop, files, bot=None, event_mask=None):
+async def inotify_start(loop, files, callback=None, event_mask=None):
     from os.path import dirname
     event_mask = event_mask or \
                  pyi.IN_MODIFY | pyi.IN_ATTRIB | pyi.IN_CLOSE_WRITE | \
@@ -59,5 +57,5 @@ async def inotify_start(loop, files, bot=None, event_mask=None):
             list(set(map(dirname, files))),
             event_mask)
     misc.log(watches, category='INOTIFY')
-    handler = InotifyEventHandler(files=files, bot=bot)
+    handler = InotifyEventHandler(files=files, callback=callback)
     pyi.AsyncioNotifier(wm, loop, default_proc_fun=handler)
