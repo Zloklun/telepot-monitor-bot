@@ -16,10 +16,13 @@ import misc
 
 
 class BotManager:
-    def __init__(self, loop=None):
+    def __init__(self, whitelist=None, admins_list=None, loop=None):
         self.loop = loop or aio.get_event_loop()
         self.token = open(misc.TOKEN_FILE).read().strip()
+        self.admins = admins_list
+        self.whitelist = whitelist
         self.bot = telepot.aio.DelegatorBot(self.token, [
+            # Admin
             pave_event_space()(
                     per_application(),
                     create_open,
@@ -64,6 +67,9 @@ loop = aio.get_event_loop()
 loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
-bm = BotManager(loop)
+bm = BotManager(
+        whitelist=misc.WHITELIST_LIST,
+        admins_list=misc.ADMINS_LIST,
+        loop=loop)
 loop.create_task(bm.run_forever())
 loop.run_forever()
