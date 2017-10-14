@@ -8,4 +8,12 @@ import misc
 
 
 class ChatBot(ChatHandler):
-    pass
+    """Bot that handles non-admin commands"""
+    def __init(self, *args, **kwargs):
+        super(ChatBot, self).__init__(*args, **kwargs)
+
+    async def on_chat_message(self, msg):
+        """Handles chat message"""
+        _, _, chat_id = glance(msg)
+        await self.sendMessage(chat_id, msg['text'])
+
