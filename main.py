@@ -9,6 +9,7 @@ import telepot.aio
 from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, \
     per_from_id_in, \
+    per_from_id, \
     per_application, \
     create_open
 
@@ -18,14 +19,14 @@ import misc
 
 
 class BotManager(telepot.aio.DelegatorBot):
-    def __init__(self, whitelist=None, admins_list=None):
+    def __init__(self):
         self.token = open(misc.TOKEN_FILE).read().strip()
-        self.admins = admins_list
-        self.whitelist = whitelist
         self._seen = set()
         super(BotManager, self).__init__(self.token, [
             pave_event_space()(
-                    per_from_id_in(self.whitelist),
+                    per_from_id_in(misc.WHITELIST)
+                    if misc.WHITELIST
+                    else per_from_id(),
                     create_open,
                     chatbot.ChatBot,
                     None,
@@ -33,7 +34,7 @@ class BotManager(telepot.aio.DelegatorBot):
             ),
             (
                 per_application(),
-                create_open(adminmonitor.AdminMonitor, self.admins)
+                create_open(adminmonitor.AdminMonitor, misc.ADMINS_LIST)
             ),
         ])
 
@@ -50,8 +51,6 @@ loop = aio.get_event_loop()
 loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
-bm = BotManager(
-        whitelist=misc.WHITELIST,
-        admins_list=misc.ADMINS_LIST)
+bm = BotManager()
 loop.create_task(MessageLoop(bm).run_forever())
 loop.run_forever()
