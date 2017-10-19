@@ -11,6 +11,7 @@ class ChatBot(ChatHandler):
     """Bot that handles non-admin commands"""
     def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
         super(ChatBot, self).__init__(seed_tuple, *args, **kwargs)
+        misc.log('__init__', category='ChatBot')
         self.exclude = exclude or set()
 
     async def on_chat_message(self, msg):

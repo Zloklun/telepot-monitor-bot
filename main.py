@@ -10,8 +10,7 @@ from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, \
     per_from_id_in, \
     per_application, \
-    create_open, \
-    call
+    create_open
 
 import adminbot
 import chatbot
@@ -32,9 +31,11 @@ class BotManager(telepot.aio.DelegatorBot):
                     None,
                     timeout=10 * 60
             ),
-            (
-                misc.per_admin(),
-                create_open(adminbot.AdminSender)
+            pave_event_space()(
+                    per_from_id_in(misc.ADMINS_LIST),
+                    create_open,
+                    adminbot.AdminSender,
+                    timeout=10,
             ),
             (
                 per_application(),

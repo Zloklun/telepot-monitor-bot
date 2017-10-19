@@ -1,25 +1,39 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 *-*
 
-from telepot.aio.helper import Monitor, ChatHandler
+from telepot.aio.helper import Monitor, UserHandler
 from telepot import glance, is_event
 
 import misc
 
 
-class AdminSender(ChatHandler):
+ADMIN_SENDERS = []
+
+
+class AdminSender(UserHandler):
+    '''AdminSender'''
     def __init__(self, seed_tuple, *args, **kwargs):
         super(AdminSender, self).__init__(seed_tuple, *args, **kwargs)
+        self.admins = misc.ADMINS_LIST or set()
         misc.log('__init__', category='AdminSender')
+        global ADMIN_SENDERS
+        ADMIN_SENDERS.append(self)
+
+    def __del__(self):
+        misc.log('__del__', category='AdminSender')
+        ADMIN_SENDERS.remove(self)
+        sup = super(AdminSender, self)
+        if hasattr(sup, '__del__'):
+            sup.__del__()
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type, chat_type, chat_id = glance(msg)
-        misc.log(msg['text'], category='AdminSender')
-        if msg['from']['id'] in self.exclude:
-            return
-
+        misc.log('Sending ' + msg['text'] + ' to ' + str(self.admins), category='AdminSender')
         await self.sender.sendMessage('AdminSender says: ' + msg['text'])
+
+    def on__idle(self, event):
+        pass
 
 
 class AdminBot(Monitor):
@@ -35,6 +49,7 @@ class AdminBot(Monitor):
             '/random': self.random_number,
             '/uptime': self.uptime,
         }
+        misc.log('__init__', category='AdminBot')
 
         async def _log(chat_id, *args, **kwargs):
             kwargs['category'] = 'AdminBot'

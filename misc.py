@@ -82,6 +82,6 @@ def per_admin():
         return _wrap_none(lambda msg: None)
     else:
         return _wrap_none(lambda msg:
-                          msg['from']['id']
+                          1  # msg['from']['id']
                           if msg['from']['id'] in ADMINS_LIST
                           else None)
