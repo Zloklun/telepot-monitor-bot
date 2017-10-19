@@ -7,32 +7,32 @@ from telepot import glance, is_event
 import misc
 
 
+# List with tuples (admin_id, sender)
 ADMIN_SENDERS = []
 
 
 class AdminSender(UserHandler):
-    '''AdminSender'''
+    """AdminSender: a class that sends messages to admin"""
     def __init__(self, seed_tuple, *args, **kwargs):
         super(AdminSender, self).__init__(seed_tuple, *args, **kwargs)
         self.admins = misc.ADMINS_LIST or set()
         misc.log('__init__', category='AdminSender')
         global ADMIN_SENDERS
-        ADMIN_SENDERS.append(self)
+        ADMIN_SENDERS.append((self.user_id, self.sender))
 
     def __del__(self):
         misc.log('__del__', category='AdminSender')
-        ADMIN_SENDERS.remove(self)
+        ADMIN_SENDERS.remove((self.user_id, self.sender))
         sup = super(AdminSender, self)
         if hasattr(sup, '__del__'):
             sup.__del__()
 
     async def on_chat_message(self, msg):
-        """Handles chat message"""
-        content_type, chat_type, chat_id = glance(msg)
-        misc.log('Sending ' + msg['text'] + ' to ' + str(self.admins), category='AdminSender')
-        await self.sender.sendMessage('AdminSender says: ' + msg['text'])
+        """It does not handle chat message"""
+        pass
 
     def on__idle(self, event):
+        """Don't close on timeout"""
         pass
 
 
@@ -46,44 +46,55 @@ class AdminBot(Monitor):
         self.routes = {
             '/start': self.start,
             '/help': self.start,
-            '/random': self.random_number,
             '/uptime': self.uptime,
         }
         misc.log('__init__', category='AdminBot')
 
-        async def _log(chat_id, *args, **kwargs):
-            kwargs['category'] = 'AdminBot'
-            misc.log(*args, **kwargs)
-        self.sendMessage = _log
-
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type, chat_type, chat_id = glance(msg)
-        misc.log(content_type, chat_type, chat_id, category='AdminBot')
-        misc.log(msg, category='AdminBot')
-
-        await self.sendMessage(chat_id, 'AdminBot says: ' + msg['text'])
-        return
-
-        if content_type == 'text':
-            if misc.WHITELIST and chat_id in misc.WHITELIST:
-                await self.route_command(chat_id, msg['text'])
-            else:
-                await self.route_command(chat_id, 'You are not whitelisted')
+        for user_id, sender in ADMIN_SENDERS:
+            if user_id == chat_id:
+                break
         else:
+            misc.log('Cannot reply to ' + chat_id, category='AdminBot')
+            return
+
+        if content_type != 'text':
             await self.sendMessage(
                     chat_id,
                     'Unsupported content_type ' + content_type
             )
+            return
+        if misc.WHITELIST and chat_id in misc.WHITELIST:
+            await self.route_command(chat_id, msg['text'])
+        else:
+            await self.route_command(chat_id, 'You are not whitelisted')
 
-    async def send_to_whitelist(self, message: str):
+    async def send_to_admins(self, message: str):
         """Sends message to all chats in whitelist"""
-        if not misc.WHITELIST:
-            misc.log('Whitelist is empty', category='ChatBot::send_to_whitelist')
+        if not ADMIN_SENDERS:
+            misc.log('ADMIN_SENDERS is empty', category='ChatBot')
             return False
-        for chat_id in misc.WHITELIST:
-            await self.sendMessage(chat_id, message, parse_mode='Markdown')
+        for _, sender in ADMIN_SENDERS:
+            await sender.sendMessage(message, parse_mode='Markdown')
             return True
+
+    async def send_if_admin(self, chat_id, message: str):
+        """Sends message to all chats in whitelist"""
+        if not ADMIN_SENDERS:
+            misc.log('ADMIN_SENDERS is empty', category='ChatBot')
+            return False
+        for user_id, sender in ADMIN_SENDERS:
+            if user_id == chat_id:
+                await sender.sendMessage(message, parse_mode='Markdown')
+                return True
+        else:
+            misc.log(
+                    '{} not in ADMIN_SENDERS'.format(chat_id),
+                    category='ChatBot'
+            )
+            return False
 
     async def route_command(self, chat_id, message: str):
         """Routes command to appropriate function"""
@@ -91,48 +102,13 @@ class AdminBot(Monitor):
         assert isinstance(cmd, str)
         cmd = cmd.lower()
         if cmd in self.routes.keys():
-            await self.sendMessage(
+            await self.send_if_admin(
                     chat_id,
                     self.routes[cmd](cmd, *args),
-                    parse_mode='Markdown'
             )
         else:
-            await self.sendMessage(chat_id, 'Wrong command')
-#            await self.route_command('/help')
-
-    def start(self, cmd, *args):
-        return 'Available commands are:\n' \
-               ' /random \[start] \[end]    Prints random number\n' \
-               ' /uptime \[units]          Prints uptime\n'
-
-    def random_number(self, cmd, *args):
-        """Returns random number"""
-        usage = 'Usage: *{}* \[start] \[end]'.format(cmd)
-        import random
-        if len(args) == 0:
-            return str(random.random())
-        elif len(args) == 1:
-            arg = args[0]
-            if arg == 'help':
-                return usage
-            try:
-                arg = int(arg)
-                return random.randint(1, arg)
-            except ValueError:
-                return 'Wrong command.\n' + usage
-        elif len(args) == 2:
-            try:
-                a, b = args
-                a = int(float(a))
-                b = int(float(b))
-                if a > b:
-                    return usage
-                else:
-                    return random.randint(a, b)
-            except ValueError:
-                return usage
-        else:
-            return usage
+            await self.send_if_admin(chat_id, 'Wrong command')
+            await self.route_command('/help')
 
     def uptime(self, cmd, *args):
         """Uptime info"""
@@ -166,3 +142,8 @@ class AdminBot(Monitor):
                 return usage
             return '*Uptime*: {:.3f} {}'.format(value, full_units[unit])
         return usage
+
+    def start(self, cmd, *args):
+        return 'Available admin commands are:\n' \
+               ' /uptime \[units]          Prints uptime\n'
+
