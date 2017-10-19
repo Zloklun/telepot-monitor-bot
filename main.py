@@ -37,10 +37,6 @@ class BotManager(telepot.aio.DelegatorBot):
                     adminbot.AdminSender,
                     timeout=10,
             ),
-            (
-                per_application(),
-                create_open(adminbot.AdminBot, self.admins)
-            ),
         ])
 
 

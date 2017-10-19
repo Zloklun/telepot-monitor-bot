@@ -1,12 +1,16 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 *-*
 
-from telepot.aio.helper import ChatHandler
+from telepot.aio.helper import UserHandler
+from telepot.exception import IdleTerminate
 
 import misc
 
+# List with tuples (admin_id, sender)
+ADMIN_SENDERS = []
 
-class ChatBot(ChatHandler):
+
+class ChatBot(UserHandler):
     """Bot that handles non-admin commands"""
     def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
         super(ChatBot, self).__init__(seed_tuple, *args, **kwargs)
@@ -17,7 +21,25 @@ class ChatBot(ChatHandler):
             '/help': self.start,
             '/random': self.random_number,
         }
-        misc.log(self.router.routing_table, category='ChatBot')
+        if self.user_id in misc.ADMINS_LIST:
+            global ADMIN_SENDERS
+            ADMIN_SENDERS.append((self.user_id, self.sender))
+
+    def __del__(self):
+        misc.log('__del__', category='AdminSender')
+        global ADMIN_SENDERS
+        ADMIN_SENDERS.remove((self.user_id, self.sender))
+        sup = super(ChatBot, self)
+        if hasattr(sup, '__del__'):
+            sup.__del__()
+
+
+    def on__idle(self, event):
+        """Don't close on timeout"""
+        if self.user_id in misc.ADMINS_LIST:
+            pass
+        else:
+            raise IdleTerminate(event['_idle']['seconds'])
 
     async def on_chat_message(self, msg):
         """Handles chat message"""

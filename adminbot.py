@@ -11,35 +11,6 @@ import loadavg
 import inotifier
 
 
-# List with tuples (admin_id, sender)
-ADMIN_SENDERS = []
-
-
-class AdminSender(UserHandler):
-    """AdminSender: a class that sends messages to admin"""
-    def __init__(self, seed_tuple, *args, **kwargs):
-        super(AdminSender, self).__init__(seed_tuple, *args, **kwargs)
-        self.admins = misc.ADMINS_LIST or set()
-        misc.log('__init__', category='AdminSender')
-        global ADMIN_SENDERS
-        ADMIN_SENDERS.append((self.user_id, self.sender))
-
-    def __del__(self):
-        misc.log('__del__', category='AdminSender')
-        ADMIN_SENDERS.remove((self.user_id, self.sender))
-        sup = super(AdminSender, self)
-        if hasattr(sup, '__del__'):
-            sup.__del__()
-
-    async def on_chat_message(self, msg):
-        """It does not handle chat message"""
-        pass
-
-    def on__idle(self, event):
-        """Don't close on timeout"""
-        pass
-
-
 class AdminBot(Monitor):
     def __init__(self, seed_tuple, admins, *args, **kwargs):
         super(AdminBot, self).__init__(
