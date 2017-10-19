@@ -48,7 +48,7 @@ class LoadavgNotifier:
             )
             if (t15, t5, t1) >= self.threshold:
                 log('Emitted', category='LoadavgNotifier')
-                self.callback((t1, t5, t15))
+                await self.callback((t1, t5, t15))
             await aio.sleep(self.timeout)
         log('Stopped', category='LoadavgNotifier')
 

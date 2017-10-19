@@ -4,7 +4,11 @@
 from telepot.aio.helper import Monitor, UserHandler
 from telepot import glance, is_event
 
+import asyncio as aio
+
 import misc
+import loadavg
+import inotifier
 
 
 # List with tuples (admin_id, sender)
@@ -48,7 +52,24 @@ class AdminBot(Monitor):
             '/help': self.start,
             '/uptime': self.uptime,
         }
+        loop = aio.get_event_loop()
+        loop.create_task(
+                loadavg.LoadavgNotifier(
+                        5,
+                        callback=self.loadavg_notify
+                ).run()
+        )
+        loop.create_task(
+                inotifier.inotify_start(
+                        loop,
+                        ('/mnt/zram/test'),
+                        callback=self.send_to_admins
+                )
+        )
         misc.log('__init__', category='AdminBot')
+
+    def on__idle(self):
+        pass
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
@@ -147,3 +168,5 @@ class AdminBot(Monitor):
         return 'Available admin commands are:\n' \
                ' /uptime \[units]          Prints uptime\n'
 
+    async def loadavg_notify(self, loadavg):
+        await self.send_to_admins('*High loadavg value*:\n' + str(loadavg))

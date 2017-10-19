@@ -11,7 +11,7 @@ class InotifyEventHandler(pyi.ProcessEvent):
         self.files = files
         misc.log('Watched files:',
                  files,
-                 category='InotifyEventHandler::my_init')
+                 category='InotifyEventHandler')
 
     async def process_event(self, event, prefix):
         async def job():
@@ -49,13 +49,12 @@ class InotifyEventHandler(pyi.ProcessEvent):
 
 async def inotify_start(loop, files, callback=None, event_mask=None):
     from os.path import dirname
-    event_mask = event_mask or \
-                 pyi.IN_MODIFY | pyi.IN_ATTRIB | pyi.IN_CLOSE_WRITE | \
-                 pyi.IN_DELETE | pyi.IN_CREATE | pyi.IN_MOVE_SELF
     wm = pyi.WatchManager()
     watches = wm.add_watch(
             list(set(map(dirname, files))),
-            event_mask)
+            event_mask or pyi.IN_MODIFY | pyi.IN_ATTRIB | pyi.IN_CLOSE_WRITE | \
+            pyi.IN_DELETE | pyi.IN_CREATE | pyi.IN_MOVE_SELF
+    )
     misc.log(watches, category='INOTIFY')
     handler = InotifyEventHandler(files=files, callback=callback)
     pyi.AsyncioNotifier(wm, loop, default_proc_fun=handler)
