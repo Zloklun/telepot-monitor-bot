@@ -50,11 +50,11 @@ class ChatBot(UserHandler):
         """Handles chat message"""
         content_type = glance(msg)[0]
         misc.log(
-                '{}{}: {} /{}/'.format(
+                '{}{} ({}): {}'.format(
                         '!' if self.user_is_admin() else ' ',
                         self.user_id,
+                        content_type,
                         msg['text'],
-                        content_type
                 ),
                 category='ChatBot'
         )

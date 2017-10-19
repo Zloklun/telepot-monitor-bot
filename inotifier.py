@@ -60,7 +60,8 @@ async def inotify_start(loop, files, callback=None, event_mask=None):
                      pyi.IN_DELETE | pyi.IN_CREATE | pyi.IN_MOVE_SELF
 
     wm = pyi.WatchManager()
-    watches = wm.add_watch(files, event_mask, rec=True, do_glob=True, auto_add=True)
+    watches = wm.add_watch(files, event_mask,
+                           rec=True, do_glob=True, auto_add=True)
     misc.log(watches, category='inotify_start')
 
     handler = InotifyEvent(files=files, callback=callback)
