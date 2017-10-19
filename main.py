@@ -12,7 +12,7 @@ from telepot.aio.delegate import pave_event_space, \
     per_application, \
     create_open
 
-import adminbot
+import adminmonitor
 import chatbot
 import misc
 
@@ -33,7 +33,7 @@ class BotManager(telepot.aio.DelegatorBot):
             ),
             (
                 per_application(),
-                create_open(adminbot.AdminBot, self.admins)
+                create_open(adminmonitor.AdminMonitor, self.admins)
             ),
         ])
 

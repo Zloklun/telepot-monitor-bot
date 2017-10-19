@@ -10,9 +10,9 @@ import inotifier
 from chatbot import ADMIN_SENDERS
 
 
-class AdminBot(Monitor):
+class AdminMonitor(Monitor):
     def __init__(self, seed_tuple, admins, *args, **kwargs):
-        super(AdminBot, self).__init__(seed_tuple, capture=[[lambda msg: False]])
+        super(AdminMonitor, self).__init__(seed_tuple, capture=[[lambda msg: False]])
         import asyncio as aio
         loop = aio.get_event_loop()
         loop.create_task(
@@ -28,7 +28,7 @@ class AdminBot(Monitor):
                         callback=self.send_to_admins
                 )
         )
-        misc.log('__init__', category='AdminBot')
+        misc.log('__init__', category='AdminMonitor')
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
