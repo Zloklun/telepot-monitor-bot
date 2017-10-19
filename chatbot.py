@@ -22,6 +22,9 @@ class ChatBot(UserHandler):
             '/random': self.random_number,
         }
         if self.user_id in misc.ADMINS_LIST:
+            self.routes.update({
+                '/uptime': self.uptime,
+            })
             global ADMIN_SENDERS
             ADMIN_SENDERS.append((self.user_id, self.sender))
 
@@ -64,8 +67,14 @@ class ChatBot(UserHandler):
             await self.route_command('/help')
 
     def start(self, cmd, *args):
-        return 'Available user commands are:\n' \
-               ' /random \[start] \[end]    Prints random number\n'
+        user_cmds = ' /random \[start] \[end]    Prints random number\n'
+        if self.user_id in misc.ADMINS_LIST:
+            admin_cmds = ' /uptime \[units]          Prints uptime\n'
+        else:
+            admin_cmds = ''
+
+        return 'Available user commands are:\n' + user_cmds + admin_cmds
+
 
     def random_number(self, cmd, *args):
         """Returns random number"""
@@ -95,3 +104,36 @@ class ChatBot(UserHandler):
                 return usage
         else:
             return usage
+
+    def uptime(self, cmd, *args):
+        """Uptime info"""
+        usage = 'Usage: {} \[units]\n' \
+                'Supported units are ' \
+                'sec, min, hour, days and weeks ' \
+                '(only first letter considered)'.format(cmd)
+        if not args:
+            args = ['d']
+        if args and args[0][0].lower() in 'smhdw' and args[0] != 'help':
+            seconds = float(open('/proc/uptime').read().split()[0])
+            unit = args[0][0].lower()
+            full_units = {
+                's': 'seconds',
+                'm': 'minutes',
+                'h': 'hours',
+                'd': 'days',
+                'w': 'weeks',
+            }
+            if unit == 's':
+                value = seconds
+            elif unit == 'm':
+                value = seconds / 60
+            elif unit == 'h':
+                value = seconds / 3600
+            elif unit == 'd':
+                value = seconds / 3600 / 24
+            elif unit == 'w':
+                value = seconds / 3600 / 24 / 7
+            else:
+                return usage
+            return '*Uptime*: {:.3f} {}'.format(value, full_units[unit])
+        return usage

@@ -102,42 +102,5 @@ class AdminBot(Monitor):
             await self.send_if_admin(chat_id, 'Wrong command')
             await self.route_command('/help')
 
-    def uptime(self, cmd, *args):
-        """Uptime info"""
-        usage = 'Usage: {} \[units]\n' \
-                'Supported units are ' \
-                'sec, min, hour, days and weeks ' \
-                '(only first letter considered)'.format(cmd)
-        if not args:
-            args = ['d']
-        if args and args[0][0].lower() in 'smhdw' and args[0] != 'help':
-            seconds = float(open('/proc/uptime').read().split()[0])
-            unit = args[0][0].lower()
-            full_units = {
-                's': 'seconds',
-                'm': 'minutes',
-                'h': 'hours',
-                'd': 'days',
-                'w': 'weeks',
-            }
-            if unit == 's':
-                value = seconds
-            elif unit == 'm':
-                value = seconds / 60
-            elif unit == 'h':
-                value = seconds / 3600
-            elif unit == 'd':
-                value = seconds / 3600 / 24
-            elif unit == 'w':
-                value = seconds / 3600 / 24 / 7
-            else:
-                return usage
-            return '*Uptime*: {:.3f} {}'.format(value, full_units[unit])
-        return usage
-
-    def start(self, cmd, *args):
-        return 'Available admin commands are:\n' \
-               ' /uptime \[units]          Prints uptime\n'
-
     async def loadavg_notify(self, loadavg):
         await self.send_to_admins('*High loadavg value*:\n' + str(loadavg))
