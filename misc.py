@@ -6,6 +6,7 @@ import asyncio as aio
 from os.path import join, dirname
 from telepot.aio.delegate import exception
 
+
 def sync_exec(coro):
     aio.ensure_future(coro)
 
@@ -28,13 +29,9 @@ if DEBUG:
     def log(*args, **kwargs):
         """Print debug messages"""
         if 'category' in kwargs:
-            if kwargs['category']:
-                tag = '[{}]'.format(kwargs['category'])
-                del kwargs['category']
-                print(tag, *args, file=stderr)
-            else:
-                print(*args, file=stderr)
+            tag = '[{}]'.format(kwargs['category'])
             del kwargs['category']
+            print(tag, *args, file=stderr)
         else:
             print(*args, file=stderr)
 
@@ -44,7 +41,7 @@ WHITELIST = None
 try:
     with open(WHITELIST_FILE) as f:
         WHITELIST = list(map(int, f.read().split()))
-        log('Whitelist:', WHITELIST)
+        log('Whitelist:', WHITELIST, category='Misc')
 except IOError:
     log('Whitelist not found. Filtering is off')
 
@@ -54,7 +51,7 @@ ADMINS_LIST = None
 try:
     with open(ADMINS_FILE) as f:
         ADMINS_LIST = list(map(int, f.read().split()))
-        log('Whitelist:', ADMINS_LIST)
+        log('Admins:', ADMINS_LIST, category='Misc')
 except IOError:
     log('Admins list have not found. No admins supported')
 
@@ -82,7 +79,7 @@ def per_admin():
         the ``ADMINS_LIST``. If ADMINS_LIST is None, returns None.
     """
     if ADMINS_LIST is not None:
-        return None
+        return _wrap_none(lambda msg: None)
     else:
         return _wrap_none(lambda msg:
                           msg['from']['id']

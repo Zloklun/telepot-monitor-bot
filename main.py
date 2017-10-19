@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 *-*
+
 
 import asyncio as aio
 import signal
@@ -6,53 +8,39 @@ import telepot.aio
 
 from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, \
+    per_from_id_in, \
     per_application, \
-    create_open
+    create_open, \
+    call
 
 import adminbot
-import inotifier
-import loadavg
+import chatbot
 import misc
 
 
-class BotManager:
-    def __init__(self, whitelist=None, admins_list=None, loop=None):
-        self.loop = loop or aio.get_event_loop()
+class BotManager(telepot.aio.DelegatorBot):
+    def __init__(self, whitelist=None, admins_list=None):
         self.token = open(misc.TOKEN_FILE).read().strip()
         self.admins = admins_list
         self.whitelist = whitelist
-        self.bot = telepot.aio.DelegatorBot(self.token, [
-            # Admin
+        self._seen = set()
+        super(BotManager, self).__init__(self.token, [
             pave_event_space()(
-                    per_application(),
+                    per_from_id_in(self.whitelist),
                     create_open,
-                    adminbot.AdminBot,
-                    timeout=10
-            )
+                    chatbot.ChatBot,
+                    None,
+                    timeout=10 * 60
+            ),
+            (
+                misc.per_admin(),
+                create_open(adminbot.AdminSender)
+            ),
+            (
+                per_application(),
+                create_open(adminbot.AdminBot, self.admins)
+            ),
         ])
-        self.message_loop = MessageLoop(self.bot)
-        self.tasks = []
-
-    async def run_forever(self):
-        self.tasks.append(self.loop.create_task(
-                self.message_loop.run_forever()
-        ))
-        self.tasks.append(self.loop.create_task(
-                loadavg.LoadavgNotifier(
-                        timeout=1,
-                        threshold=(0.5, 0.5, 0.5),
-                        callback=self.bot.send_to_whitelist,
-                ).run()
-        ))
-        self.tasks.append(self.loop.create_task(
-                inotifier.inotify_start(self.loop, [
-                    "/var/log/auth.log",
-                ], callback=self.bot.send_to_whitelist)
-        ))
-
-    def cancel(self):
-        for task in self.tasks:
-            task.cancel()
 
 
 def signal_handler(event_loop):
@@ -68,8 +56,7 @@ loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
 bm = BotManager(
-        whitelist=misc.WHITELIST_LIST,
-        admins_list=misc.ADMINS_LIST,
-        loop=loop)
-loop.create_task(bm.run_forever())
+        whitelist=misc.WHITELIST,
+        admins_list=misc.ADMINS_LIST)
+loop.create_task(MessageLoop(bm).run_forever())
 loop.run_forever()

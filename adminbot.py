@@ -1,15 +1,34 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 *-*
 
-from telepot.aio.helper import ChatHandler
-from telepot import glance
+from telepot.aio.helper import Monitor, ChatHandler
+from telepot import glance, is_event
 
 import misc
 
 
-class AdminBot(ChatHandler):
-    def __init__(self, *args, **kwargs):
-        super(AdminBot, self).__init__(*args, **kwargs)
+class AdminSender(ChatHandler):
+    def __init__(self, seed_tuple, *args, **kwargs):
+        super(AdminSender, self).__init__(seed_tuple, *args, **kwargs)
+        misc.log('__init__', category='AdminSender')
+
+    async def on_chat_message(self, msg):
+        """Handles chat message"""
+        content_type, chat_type, chat_id = glance(msg)
+        misc.log(msg['text'], category='AdminSender')
+        if msg['from']['id'] in self.exclude:
+            return
+
+        await self.sender.sendMessage('AdminSender says: ' + msg['text'])
+
+
+class AdminBot(Monitor):
+    def __init__(self, seed_tuple, admins, *args, **kwargs):
+        super(AdminBot, self).__init__(
+                seed_tuple,
+                capture=[[lambda msg: not is_event(msg)]]
+        )
+        self.admins = admins
         self.routes = {
             '/start': self.start,
             '/help': self.start,
@@ -17,11 +36,19 @@ class AdminBot(ChatHandler):
             '/uptime': self.uptime,
         }
 
+        async def _log(chat_id, *args, **kwargs):
+            kwargs['category'] = 'AdminBot'
+            misc.log(*args, **kwargs)
+        self.sendMessage = _log
+
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type, chat_type, chat_id = glance(msg)
-        misc.log(content_type, chat_type, chat_id)
-        misc.log(msg)
+        misc.log(content_type, chat_type, chat_id, category='AdminBot')
+        misc.log(msg, category='AdminBot')
+
+        await self.sendMessage(chat_id, 'AdminBot says: ' + msg['text'])
+        return
 
         if content_type == 'text':
             if misc.WHITELIST and chat_id in misc.WHITELIST:
@@ -56,7 +83,7 @@ class AdminBot(ChatHandler):
             )
         else:
             await self.sendMessage(chat_id, 'Wrong command')
-            await self.route_command('/help')
+#            await self.route_command('/help')
 
     def start(self, cmd, *args):
         return 'Available commands are:\n' \
