@@ -24,7 +24,7 @@ class AdminMonitor(Monitor):
         loop.create_task(
                 inotifier.inotify_start(
                         loop,
-                        ['/mnt/zram/test'],
+                        ['/var/log/auth.log'],
                         callback=self.send_to_admins
                 )
         )
