@@ -77,7 +77,6 @@ class ChatBot(UserHandler):
 
         return 'Available user commands are:\n' + user_cmds + admin_cmds
 
-
     def random_number(self, cmd, *args):
         """Returns random number"""
         usage = 'Usage: *{}* \[start] \[end]'.format(cmd)
@@ -106,6 +105,13 @@ class ChatBot(UserHandler):
                 return usage
         else:
             return usage
+
+    async def send_if_admin(self, message: str):
+        """Sends message to all chats in whitelist"""
+        if not self.user_is_admin():
+            return False
+        await self.sender.sendMessage(message, parse_mode='Markdown')
+        return True
 
     def uptime(self, cmd, *args):
         """Uptime info"""

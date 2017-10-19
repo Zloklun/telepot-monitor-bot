@@ -72,22 +72,6 @@ class AdminBot(Monitor):
             await sender.sendMessage(message, parse_mode='Markdown')
             return True
 
-    async def send_if_admin(self, chat_id, message: str):
-        """Sends message to all chats in whitelist"""
-        if not ADMIN_SENDERS:
-            misc.log('ADMIN_SENDERS is empty', category='ChatBot')
-            return False
-        for user_id, sender in ADMIN_SENDERS:
-            if user_id == chat_id:
-                await sender.sendMessage(message, parse_mode='Markdown')
-                return True
-        else:
-            misc.log(
-                    '{} not in ADMIN_SENDERS'.format(chat_id),
-                    category='ChatBot'
-            )
-            return False
-
     async def route_command(self, chat_id, message: str):
         """Routes command to appropriate function"""
         cmd, *args = message.split()
