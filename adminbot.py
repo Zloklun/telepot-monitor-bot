@@ -62,7 +62,7 @@ class AdminBot(Monitor):
         loop.create_task(
                 inotifier.inotify_start(
                         loop,
-                        ('/mnt/zram/test'),
+                        ['/mnt/zram/test'],
                         callback=self.send_to_admins
                 )
         )
