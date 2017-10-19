@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 *-*
 
+from telepot import glance
 from telepot.aio.helper import UserHandler
 from telepot.exception import IdleTerminate
 
@@ -47,7 +48,16 @@ class ChatBot(UserHandler):
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
-        misc.log(msg['text'], category='ChatBot')
+        content_type = glance(msg)[0]
+        misc.log(
+                '{}{}: {} /{}/'.format(
+                        '!' if self.user_is_admin() else ' ',
+                        self.user_id,
+                        msg['text'],
+                        content_type
+                ),
+                category='ChatBot'
+        )
         if msg['from']['id'] in self.exclude:
             self.sender.sendMessage('You are blacklisted')
             return
