@@ -60,8 +60,10 @@ class ChatBot(UserHandler):
         )
         if msg['from']['id'] in self.exclude:
             self.sender.sendMessage('You are blacklisted')
-            return
-        await self.route_command(msg['text'])
+        elif content_type != 'text':
+            self.sender.sendMessage(content_type + 's not supported')
+        else:
+            await self.route_command(msg['text'])
 
     async def route_command(self, message: str):
         """Routes command to appropriate function"""
