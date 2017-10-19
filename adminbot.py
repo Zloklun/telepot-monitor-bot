@@ -1,10 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 *-*
 
-from telepot.aio.helper import Monitor, UserHandler
-from telepot import glance, is_event
-
-import asyncio as aio
+from telepot.aio.helper import Monitor
 
 import misc
 import loadavg
@@ -15,7 +12,8 @@ from chatbot import ADMIN_SENDERS
 
 class AdminBot(Monitor):
     def __init__(self, seed_tuple, admins, *args, **kwargs):
-        super(AdminBot, self).__init__(seed_tuple, capture=[])
+        super(AdminBot, self).__init__(seed_tuple, capture=[[lambda msg: False]])
+        import asyncio as aio
         loop = aio.get_event_loop()
         loop.create_task(
                 loadavg.LoadavgNotifier(
