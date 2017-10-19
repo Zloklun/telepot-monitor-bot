@@ -31,12 +31,6 @@ class BotManager(telepot.aio.DelegatorBot):
                     None,
                     timeout=10 * 60
             ),
-            pave_event_space()(
-                    per_from_id_in(misc.ADMINS_LIST),
-                    create_open,
-                    adminbot.AdminSender,
-                    timeout=10,
-            ),
             (
                 per_application(),
                 create_open(adminbot.AdminBot, self.admins)

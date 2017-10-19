@@ -1,12 +1,16 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 *-*
 
-from telepot.aio.helper import ChatHandler
+from telepot.aio.helper import UserHandler
+from telepot.exception import IdleTerminate
 
 import misc
 
+# List with tuples (admin_id, sender)
+ADMIN_SENDERS = []
 
-class ChatBot(ChatHandler):
+
+class ChatBot(UserHandler):
     """Bot that handles non-admin commands"""
     def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
         super(ChatBot, self).__init__(seed_tuple, *args, **kwargs)
@@ -17,7 +21,29 @@ class ChatBot(ChatHandler):
             '/help': self.start,
             '/random': self.random_number,
         }
-        misc.log(self.router.routing_table, category='ChatBot')
+        self.admin_routes = {
+            '/uptime': self.uptime,
+        }
+        if self.user_is_admin():
+            ADMIN_SENDERS.append((self.user_id, self.sender))
+
+    def __del__(self):
+        misc.log('__del__', category='AdminSender')
+        ADMIN_SENDERS.remove((self.user_id, self.sender))
+        sup = super(ChatBot, self)
+        if hasattr(sup, '__del__'):
+            sup.__del__()
+
+    def on__idle(self, event):
+        """Closes instance by timeout if user is not admin"""
+        if self.user_is_admin():
+            pass
+        else:
+            raise IdleTerminate(event['_idle']['seconds'])
+
+    def user_is_admin(self):
+        """:returns True if current user is admin"""
+        return self.user_id in misc.ADMINS_LIST
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
@@ -37,13 +63,26 @@ class ChatBot(ChatHandler):
                     self.routes[cmd](cmd, *args),
                     parse_mode='Markdown'
             )
+        elif cmd in self.admin_routes.keys():
+            if self.user_is_admin():
+                await self.sender.sendMessage(
+                        self.admin_routes[cmd](cmd, *args),
+                        parse_mode='Markdown'
+                )
+            else:
+                await self.sender.sendMessage('Not an admin')
         else:
             await self.sender.sendMessage('Wrong command')
             await self.route_command('/help')
 
     def start(self, cmd, *args):
-        return 'Available user commands are:\n' \
-               ' /random \[start] \[end]    Prints random number\n'
+        user_cmds = ' /random \[start] \[end]    Prints random number\n'
+        if self.user_is_admin():
+            admin_cmds = ' /uptime \[units]          Prints uptime\n'
+        else:
+            admin_cmds = ''
+
+        return 'Available user commands are:\n' + user_cmds + admin_cmds
 
     def random_number(self, cmd, *args):
         """Returns random number"""
@@ -73,3 +112,43 @@ class ChatBot(ChatHandler):
                 return usage
         else:
             return usage
+
+    async def send_if_admin(self, message: str):
+        """Sends message to all chats in whitelist"""
+        if not self.user_is_admin():
+            return False
+        await self.sender.sendMessage(message, parse_mode='Markdown')
+        return True
+
+    def uptime(self, cmd, *args):
+        """Uptime info"""
+        usage = 'Usage: {} \[units]\n' \
+                'Supported units are ' \
+                'sec, min, hour, days and weeks ' \
+                '(only first letter considered)'.format(cmd)
+        if not args:
+            args = ['d']
+        if args and args[0][0].lower() in 'smhdw' and args[0] != 'help':
+            seconds = float(open('/proc/uptime').read().split()[0])
+            unit = args[0][0].lower()
+            full_units = {
+                's': 'seconds',
+                'm': 'minutes',
+                'h': 'hours',
+                'd': 'days',
+                'w': 'weeks',
+            }
+            if unit == 's':
+                value = seconds
+            elif unit == 'm':
+                value = seconds / 60
+            elif unit == 'h':
+                value = seconds / 3600
+            elif unit == 'd':
+                value = seconds / 3600 / 24
+            elif unit == 'w':
+                value = seconds / 3600 / 24 / 7
+            else:
+                return usage
+            return '*Uptime*: {:.3f} {}'.format(value, full_units[unit])
+        return usage
