@@ -1,3 +1,7 @@
+### Version 1.0.1 (_19 Oct 2017_)
+Bugfix
+1. Fixed ignoring empty whitelist
+
 #### Version 1.0.0 (_19 Oct 2017_)
 Initial version. Features:
 1. `/proc/loadavg` monitoring;
