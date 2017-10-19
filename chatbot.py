@@ -21,29 +21,28 @@ class ChatBot(UserHandler):
             '/help': self.start,
             '/random': self.random_number,
         }
+        self.admin_routes = {
+            '/uptime': self.uptime,
+        }
         if self.user_is_admin():
-            self.routes.update({
-                '/uptime': self.uptime,
-            })
-            global ADMIN_SENDERS
             ADMIN_SENDERS.append((self.user_id, self.sender))
 
     def __del__(self):
         misc.log('__del__', category='AdminSender')
-        global ADMIN_SENDERS
         ADMIN_SENDERS.remove((self.user_id, self.sender))
         sup = super(ChatBot, self)
         if hasattr(sup, '__del__'):
             sup.__del__()
 
     def on__idle(self, event):
-        """Don't close on timeout"""
+        """Closes instance by timeout if user is not admin"""
         if self.user_is_admin():
             pass
         else:
             raise IdleTerminate(event['_idle']['seconds'])
 
     def user_is_admin(self):
+        """:returns True if current user is admin"""
         return self.user_id in misc.ADMINS_LIST
 
     async def on_chat_message(self, msg):
@@ -64,6 +63,14 @@ class ChatBot(UserHandler):
                     self.routes[cmd](cmd, *args),
                     parse_mode='Markdown'
             )
+        elif cmd in self.admin_routes.keys():
+            if self.user_is_admin():
+                await self.sender.sendMessage(
+                        self.admin_routes[cmd](cmd, *args),
+                        parse_mode='Markdown'
+                )
+            else:
+                await self.sender.sendMessage('Not an admin')
         else:
             await self.sender.sendMessage('Wrong command')
             await self.route_command('/help')
