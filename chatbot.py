@@ -21,7 +21,7 @@ class ChatBot(UserHandler):
             '/help': self.start,
             '/random': self.random_number,
         }
-        if self.user_id in misc.ADMINS_LIST:
+        if self.user_is_admin():
             self.routes.update({
                 '/uptime': self.uptime,
             })
@@ -36,13 +36,15 @@ class ChatBot(UserHandler):
         if hasattr(sup, '__del__'):
             sup.__del__()
 
-
     def on__idle(self, event):
         """Don't close on timeout"""
-        if self.user_id in misc.ADMINS_LIST:
+        if self.user_is_admin():
             pass
         else:
             raise IdleTerminate(event['_idle']['seconds'])
+
+    def user_is_admin(self):
+        return self.user_id in misc.ADMINS_LIST
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
@@ -68,7 +70,7 @@ class ChatBot(UserHandler):
 
     def start(self, cmd, *args):
         user_cmds = ' /random \[start] \[end]    Prints random number\n'
-        if self.user_id in misc.ADMINS_LIST:
+        if self.user_is_admin():
             admin_cmds = ' /uptime \[units]          Prints uptime\n'
         else:
             admin_cmds = ''
