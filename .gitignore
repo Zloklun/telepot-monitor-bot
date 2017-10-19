@@ -1,5 +1,6 @@
 TOKEN
 whitelist_ids
+admin_ids
 .idea/
 __pycache__/
 *.pyo

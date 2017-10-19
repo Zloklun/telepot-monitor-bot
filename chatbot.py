@@ -1,31 +1,31 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 *-*
 
-import telepot
+from telepot.aio.helper import ChatHandler
 
 import misc
 
 
-class ChatBot(telepot.aio.helper.ChatHandler):
-    def __init__(self, *args, **kwargs):
-        super(ChatBot, self).__init__(*args, **kwargs)
+class ChatBot(ChatHandler):
+    """Bot that handles non-admin commands"""
+    def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
+        super(ChatBot, self).__init__(seed_tuple, *args, **kwargs)
+        misc.log('__init__', category='ChatBot')
+        self.exclude = exclude or set()
         self.routes = {
             '/start': self.start,
             '/help': self.start,
             '/random': self.random_number,
-            '/uptime': self.uptime,
         }
+        misc.log(self.router.routing_table, category='ChatBot')
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        misc.log(content_type, chat_type, chat_id)
-        misc.log(msg)
-
-        if content_type == 'text':
-            await self.route_command(msg['text'])
-        else:
-            await self.sender.sendMessage('Unsupported content_type ' +
-                                          content_type)
+        misc.log(msg['text'], category='ChatBot')
+        if msg['from']['id'] in self.exclude:
+            self.sender.sendMessage('You are blacklisted')
+            return
+        await self.route_command(msg['text'])
 
     async def route_command(self, message: str):
         """Routes command to appropriate function"""
@@ -42,13 +42,12 @@ class ChatBot(telepot.aio.helper.ChatHandler):
             await self.route_command('/help')
 
     def start(self, cmd, *args):
-        return "Available commands are:\n" \
-               " /random \[start] \[end]    Prints random number\n" \
-               " /uptime \[units]          Prints uptime\n"
+        return 'Available user commands are:\n' \
+               ' /random \[start] \[end]    Prints random number\n'
 
     def random_number(self, cmd, *args):
         """Returns random number"""
-        usage = """Usage: *{}* \[start] \[end]""".format(cmd)
+        usage = 'Usage: *{}* \[start] \[end]'.format(cmd)
         import random
         if len(args) == 0:
             return str(random.random())
@@ -74,36 +73,3 @@ class ChatBot(telepot.aio.helper.ChatHandler):
                 return usage
         else:
             return usage
-
-    def uptime(self, cmd, *args):
-        """Uptime info"""
-        usage = "Usage: {} \[units]\n" \
-                "Supported units are " \
-                "sec, min, hour, days and weeks " \
-                "(only first letter considered)".format(cmd)
-        if not args:
-            args = ['d']
-        if args and args[0][0].lower() in 'smhdw' and args[0] != 'help':
-            seconds = float(open('/proc/uptime').read().split()[0])
-            unit = args[0][0].lower()
-            full_units = {
-                's': 'seconds',
-                'm': 'minutes',
-                'h': 'hours',
-                'd': 'days',
-                'w': 'weeks',
-            }
-            if unit == 's':
-                value = seconds
-            elif unit == 'm':
-                value = seconds / 60
-            elif unit == 'h':
-                value = seconds / 3600
-            elif unit == 'd':
-                value = seconds / 3600 / 24
-            elif unit == 'w':
-                value = seconds / 3600 / 24 / 7
-            else:
-                return usage
-            return "*Uptime*: {:.3f} {}".format(value, full_units[unit])
-        return usage

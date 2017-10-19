@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 *-*
+
 
 import asyncio as aio
 import signal
@@ -7,49 +9,55 @@ import telepot.aio
 from telepot.aio.loop import MessageLoop
 from telepot.aio.delegate import pave_event_space, \
     per_from_id_in, \
-    per_from_id, \
+    per_application, \
     create_open
 
+import adminbot
 import chatbot
-import inotifier
-import loadavg
 import misc
 
 
-token = open(misc.TOKEN_FILE).read().strip()
-bot = telepot.aio.DelegatorBot(token, [
-    pave_event_space()(
-            per_from_id_in(misc.WHITELIST) if misc.WHITELIST
-            else per_from_id(),
-            create_open,
-            chatbot.ChatBot,
-            timeout=10
-    )
-])
+class BotManager(telepot.aio.DelegatorBot):
+    def __init__(self, whitelist=None, admins_list=None):
+        self.token = open(misc.TOKEN_FILE).read().strip()
+        self.admins = admins_list
+        self.whitelist = whitelist
+        self._seen = set()
+        super(BotManager, self).__init__(self.token, [
+            pave_event_space()(
+                    per_from_id_in(self.whitelist),
+                    create_open,
+                    chatbot.ChatBot,
+                    None,
+                    timeout=10 * 60
+            ),
+            pave_event_space()(
+                    per_from_id_in(misc.ADMINS_LIST),
+                    create_open,
+                    adminbot.AdminSender,
+                    timeout=10,
+            ),
+            (
+                per_application(),
+                create_open(adminbot.AdminBot, self.admins)
+            ),
+        ])
 
 
-def signal_handler(loop):
+def signal_handler(event_loop):
     """Handler for SIGTERM"""
     misc.log('Caught SIGTERM', category='SHUTDOWN')
-    loop.remove_signal_handler(signal.SIGTERM)
-    loop.remove_signal_handler(signal.SIGINT)
-    task_msg.cancel()
-    task_ino.cancel()
-    task_lav.cancel()
-    loop.stop()
+    event_loop.remove_signal_handler(signal.SIGTERM)
+    event_loop.remove_signal_handler(signal.SIGINT)
+    event_loop.stop()
 
 
 loop = aio.get_event_loop()
 loop.add_signal_handler(signal.SIGTERM, signal_handler, loop)
 loop.add_signal_handler(signal.SIGINT, signal_handler, loop)
 
-message_loop = MessageLoop(bot)
-task_msg = loop.create_task(message_loop.run_forever())
-task_ino = loop.create_task(
-        inotifier.inotify_start(loop, [
-            "/mnt/zram/test/test",
-        ], bot)
-)
-task_lav = loop.create_task(loadavg.LoadavgNotifier(1, (5, 3, 1)).run())
-
+bm = BotManager(
+        whitelist=misc.WHITELIST,
+        admins_list=misc.ADMINS_LIST)
+loop.create_task(MessageLoop(bm).run_forever())
 loop.run_forever()
