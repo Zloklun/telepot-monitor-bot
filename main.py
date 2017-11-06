@@ -15,17 +15,17 @@ from telepot.aio.delegate import pave_event_space, \
 
 import adminmonitor
 import chatbot
-import misc
+import config
 
 
 class BotManager(telepot.aio.DelegatorBot):
     def __init__(self):
-        self.token = open(misc.TOKEN_FILE).read().strip()
+        self.token = open(config.TOKEN_FILE).read().strip()
         self._seen = set()
         super(BotManager, self).__init__(self.token, [
             pave_event_space()(
-                    per_from_id_in(misc.WHITELIST)
-                    if misc.WHITELIST
+                    per_from_id_in(config.WHITELIST)
+                    if config.WHITELIST
                     else per_from_id(),
                     create_open,
                     chatbot.ChatBot,
@@ -34,14 +34,14 @@ class BotManager(telepot.aio.DelegatorBot):
             ),
             (
                 per_application(),
-                create_open(adminmonitor.AdminMonitor, misc.ADMINS_LIST)
+                create_open(adminmonitor.AdminMonitor, config.ADMINS_LIST)
             ),
         ])
 
 
 def signal_handler(event_loop):
     """Handler for SIGTERM"""
-    misc.log('Caught SIGTERM', category='SHUTDOWN')
+    config.log('Caught SIGTERM', category='SHUTDOWN')
     event_loop.remove_signal_handler(signal.SIGTERM)
     event_loop.remove_signal_handler(signal.SIGINT)
     event_loop.stop()

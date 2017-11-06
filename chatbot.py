@@ -5,7 +5,7 @@ from telepot import glance
 from telepot.aio.helper import UserHandler
 from telepot.exception import IdleTerminate
 
-import misc
+import config
 
 # List with tuples (admin_id, sender)
 ADMIN_SENDERS = []
@@ -84,7 +84,7 @@ class ChatBot(UserHandler):
     """Bot that handles non-admin commands"""
     def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
         super(ChatBot, self).__init__(seed_tuple, *args, **kwargs)
-        misc.log('__init__', category='ChatBot')
+        config.log('__init__', category='ChatBot')
         self.exclude = exclude or set()
         self.routes = {
             '/start': self.start,
@@ -99,7 +99,7 @@ class ChatBot(UserHandler):
             ADMIN_SENDERS.append((self.user_id, self.sender))
 
     def __del__(self):
-        misc.log('__del__', category='AdminSender')
+        config.log('__del__', category='AdminSender')
         ADMIN_SENDERS.remove((self.user_id, self.sender))
         sup = super(ChatBot, self)
         if hasattr(sup, '__del__'):
@@ -114,12 +114,12 @@ class ChatBot(UserHandler):
 
     def user_is_admin(self):
         """:returns True if current user is admin"""
-        return self.user_id in misc.ADMINS_LIST
+        return self.user_id in config.ADMINS_LIST
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
         content_type = glance(msg)[0]
-        misc.log(
+        config.log(
                 '{}{} ({}): {}'.format(
                         '!' if self.user_is_admin() else ' ',
                         self.user_id,

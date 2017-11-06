@@ -3,7 +3,7 @@
 
 from telepot.aio.helper import Monitor
 
-import misc
+import config
 import loadavg
 import inotifier
 
@@ -28,7 +28,7 @@ class AdminMonitor(Monitor):
                         callback=self.send_to_admins
                 )
         )
-        misc.log('__init__', category='AdminMonitor')
+        config.log('__init__', category='AdminMonitor')
 
     async def on_chat_message(self, msg):
         """Handles chat message"""
@@ -37,7 +37,7 @@ class AdminMonitor(Monitor):
     async def send_to_admins(self, message: str):
         """Sends message to all admins"""
         if not ADMIN_SENDERS:
-            misc.log('ADMIN_SENDERS is empty', category='ChatBot')
+            config.log('ADMIN_SENDERS is empty', category='ChatBot')
             return False
         for _, sender in ADMIN_SENDERS:
             await sender.sendMessage(message, parse_mode='Markdown')
