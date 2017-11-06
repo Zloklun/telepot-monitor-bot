@@ -77,7 +77,35 @@ def uptime(cmd, *args):
 
 def fail2ban(cmd, *args):
     """Fail2Ban commands"""
-    pass
+    usage = 'Usage: {} \[command]\n' \
+            'Supported commands are:\n' \
+            '  status — returns current fail2ban status\n' \
+            ''.format(cmd)
+    from subprocess import Popen, PIPE, DEVNULL
+
+    binary, _ = Popen('which fail2ban-client',
+                      shell=True,
+                      stdout=PIPE,
+                      stderr=DEVNULL).communicate()
+    if binary:
+        binary = binary.decode().strip()
+    else:
+        return 'fail2ban-client does _not_ exist'
+    if not args:
+        return usage
+    if args[0] == 'status':
+        out, err = Popen([binary, 'status'],
+                         shell=False,
+                         stdout=PIPE,
+                         stderr=PIPE).communicate()
+        result = ''
+        if out:
+            result += 'stdout: *{}*'.format(out.decode().strip())
+        if err:
+            result += '\nstderr: *{}*'.format(err.decode().strip())
+        return result
+    else:
+        return usage
 
 
 class ChatBot(UserHandler):
@@ -160,7 +188,8 @@ class ChatBot(UserHandler):
     def start(self, cmd, *args):
         user_cmds = ' /random \[start] \[end]    Prints random number\n'
         if self.user_is_admin():
-            admin_cmds = ' /uptime \[units]          Prints uptime\n'
+            admin_cmds = ' /uptime \[units]          Prints uptime\n' \
+                         ' /fail2ban \[command]      Executes fail2ban commands'
         else:
             admin_cmds = ''
 
