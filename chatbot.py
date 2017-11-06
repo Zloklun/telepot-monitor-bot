@@ -186,10 +186,10 @@ class ChatBot(UserHandler):
             await self.route_command('/help')
 
     def start(self, cmd, *args):
-        user_cmds = ' /random \[start] \[end]    Prints random number\n'
+        user_cmds = '/random \[start] \[end]  Prints random number\n'
         if self.user_is_admin():
-            admin_cmds = ' /uptime \[units]          Prints uptime\n' \
-                         ' /fail2ban \[command]      Executes fail2ban commands'
+            admin_cmds = '/uptime \[units]         Prints uptime\n' \
+                         '/fail2ban \[command]     Executes fail2ban commands\n'
         else:
             admin_cmds = ''
 
