@@ -75,6 +75,11 @@ def uptime(cmd, *args):
     return usage
 
 
+def fail2ban(cmd, *args):
+    """Fail2Ban commands"""
+    pass
+
+
 class ChatBot(UserHandler):
     """Bot that handles non-admin commands"""
     def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
@@ -88,6 +93,7 @@ class ChatBot(UserHandler):
         }
         self.admin_routes = {
             '/uptime': uptime,
+            '/fail2ban': fail2ban,
         }
         if self.user_is_admin():
             ADMIN_SENDERS.append((self.user_id, self.sender))
