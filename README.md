@@ -41,4 +41,5 @@ All commands support `help` as argument, e.g. `/uptime help`.
     * `/fail2ban ban <ip> <jail>` is same as
         `fail2ban-client set <jail> banip <ip>`;
     * `/fail2ban unban <ip> <jail>` is same as
-        `fail2ban-client set <jail> unbanip <ip>`.
+        `fail2ban-client set <jail> unbanip <ip>`;
+    * `/fail2ban checkip <ip>` — prints whether given ip is banned.

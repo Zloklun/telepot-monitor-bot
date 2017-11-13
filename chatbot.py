@@ -83,6 +83,7 @@ def fail2ban(cmd, *args):
             '  status <jail> — returns current status of a given <jail>\n' \
             '  ban <ip> <jail> — bans ip in given jail\n' \
             '  unban <ip> <jail> — bans ip in given jail\n' \
+            '  checkip <ip> — prints whether given ip is banned\n' \
             ''.format(cmd)
     from subprocess import Popen, PIPE, DEVNULL
 
@@ -144,6 +145,18 @@ def fail2ban(cmd, *args):
         if err:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
+    elif args[0] == 'checkip':
+        if len(args) != 2:
+            return usage
+        ip = args[1]
+        jails = []  # Names of active jails
+        for line in fail2ban('fail2ban', 'status').splitlines(keepends=False):
+            if 'Jail list:' in line:
+                jails = line.split()[4:]
+        for jail in jails:
+            if ip in fail2ban('fail2ban', 'status', jail):
+                return 'IP {} is banned by {}'.format(ip, jail)
+        return 'IP {} is not banned'.format(ip)
     else:
         return usage
 
