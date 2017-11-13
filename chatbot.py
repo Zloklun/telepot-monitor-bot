@@ -79,7 +79,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
     usage = 'Usage: {} \[command]\n' \
             'Supported commands are:\n' \
             '  status  — returns current fail2ban status\n' \
-            '  status <jail> — returns current status of a given <jail>\n' \
+            '  status <jail> — returns current status of a given jail\n' \
             '  ban <ip> <jail> — bans ip in given jail\n' \
             '  unban <ip> <jail> — bans ip in given jail\n' \
             '  checkip <ip> — prints whether given ip is banned\n' \
@@ -96,6 +96,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         return 'fail2ban-client does _not_ exist'
     if not args:
         return usage
+
     if args[0] == 'status':
         if len(args) > 2:
             return usage
@@ -112,10 +113,11 @@ def fail2ban(cmd: str, *args: [str]) -> str:
                              stderr=PIPE).communicate()
         result = ''
         if out:
-            result += 'stdout: *{}*'.format(out.decode().strip())
+            result += '_stdout:_ {}'.format(out.decode().strip())
         if err:
-            result += '\nstderr: *{}*'.format(err.decode().strip())
+            result += '\n_stderr:_ {}'.format(err.decode().strip())
         return result
+
     elif args[0] == 'ban':
         if len(args) != 3:
             return usage
@@ -130,6 +132,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         if err:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
+
     elif args[0] == 'unban':
         if len(args) != 3:
             return usage
@@ -144,6 +147,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         if err:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
+
     elif args[0] == 'checkip':
         if len(args) != 2:
             return usage
@@ -156,8 +160,9 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         config.log('Jails are ', jails, category='fail2ban checkip')
         for jail in jails:
             if ip in fail2ban('fail2ban', 'status', jail):
-                return 'IP *{}* is banned by *{}*'.format(ip, jail)
-        return 'IP *{}* is not banned'.format(ip)
+                return '{} *is* banned by _{}_ jail'.format(ip, jail)
+        return '{} is *not* banned'.format(ip)
+
     else:
         return usage
 
@@ -242,12 +247,13 @@ class ChatBot(UserHandler):
     def start(self, cmd: str, *args: [str]) -> str:
         user_cmds = '/random \[start] \[end]  Prints random number\n'
         if self.user_is_admin():
-            admin_cmds = '/uptime \[units]         Prints uptime\n' \
+            admin_cmds = '\nAvailable admin commands:\n'\
+                         '/uptime \[units]         Prints uptime\n' \
                          '/fail2ban \[command]     Executes fail2ban commands\n'
         else:
             admin_cmds = ''
 
-        return 'Available user commands are:\n' + user_cmds + admin_cmds
+        return 'Available user commands:\n' + user_cmds + admin_cmds
 
     async def send_if_admin(self, message: str) -> None:
         """Sends message to all chats in whitelist"""
