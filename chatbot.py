@@ -79,7 +79,8 @@ def fail2ban(cmd, *args):
     """Fail2Ban commands"""
     usage = 'Usage: {} \[command]\n' \
             'Supported commands are:\n' \
-            '  status — returns current fail2ban status\n' \
+            '  status  — returns current fail2ban status\n' \
+            '  status <jail> — returns current status of a given <jail>\n' \
             '  ban <ip> <jail> — bans ip in given jail\n' \
             '  unban <ip> <jail> — bans ip in given jail\n' \
             ''.format(cmd)
@@ -96,20 +97,29 @@ def fail2ban(cmd, *args):
     if not args:
         return usage
     if args[0] == 'status':
-        out, err = Popen([binary, 'status'],
-                         shell=False,
-                         stdout=PIPE,
-                         stderr=PIPE).communicate()
+        if len(args) > 2:
+            return usage
+        jail = args[1] if len(args) == 2 else None
+        if jail:
+            out, err = Popen([binary, 'status', jail],
+                             shell=False,
+                             stdout=PIPE,
+                             stderr=PIPE).communicate()
+        else:
+            out, err = Popen([binary, 'status'],
+                             shell=False,
+                             stdout=PIPE,
+                             stderr=PIPE).communicate()
         result = ''
         if out:
             result += 'stdout: *{}*'.format(out.decode().strip())
         if err:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
-    elif args[1] == 'ban':
+    elif args[0] == 'ban':
         if len(args) != 3:
             return usage
-        ip, jail = args[2], args[3]
+        ip, jail = args[1], args[2]
         out, err = Popen([binary, 'set', jail, 'banip', ip],
                          shell=False,
                          stdout=PIPE,
@@ -120,10 +130,10 @@ def fail2ban(cmd, *args):
         if err:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
-    elif args[1] == 'unban':
+    elif args[0] == 'unban':
         if len(args) != 3:
             return usage
-        ip, jail = args[2], args[3]
+        ip, jail = args[1], args[2]
         out, err = Popen([binary, 'set', jail, 'unbanip', ip],
                          shell=False,
                          stdout=PIPE,
