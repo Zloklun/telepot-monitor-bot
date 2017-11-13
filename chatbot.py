@@ -80,6 +80,8 @@ def fail2ban(cmd, *args):
     usage = 'Usage: {} \[command]\n' \
             'Supported commands are:\n' \
             '  status — returns current fail2ban status\n' \
+            '  ban [ip] [jail] — bans ip in given jail\n' \
+            '  unban [ip] [jail] — bans ip in given jail\n' \
             ''.format(cmd)
     from subprocess import Popen, PIPE, DEVNULL
 
@@ -95,6 +97,34 @@ def fail2ban(cmd, *args):
         return usage
     if args[0] == 'status':
         out, err = Popen([binary, 'status'],
+                         shell=False,
+                         stdout=PIPE,
+                         stderr=PIPE).communicate()
+        result = ''
+        if out:
+            result += 'stdout: *{}*'.format(out.decode().strip())
+        if err:
+            result += '\nstderr: *{}*'.format(err.decode().strip())
+        return result
+    elif args[1] == 'ban':
+        if len(args) != 3:
+            return usage
+        ip, jail = args[2], args[3]
+        out, err = Popen([binary, 'set', jail, 'banip', ip],
+                         shell=False,
+                         stdout=PIPE,
+                         stderr=PIPE).communicate()
+        result = ''
+        if out:
+            result += 'stdout: *{}*'.format(out.decode().strip())
+        if err:
+            result += '\nstderr: *{}*'.format(err.decode().strip())
+        return result
+    elif args[1] == 'unban':
+        if len(args) != 3:
+            return usage
+        ip, jail = args[2], args[3]
+        out, err = Popen([binary, 'set', jail, 'unbanip', ip],
                          shell=False,
                          stdout=PIPE,
                          stderr=PIPE).communicate()
