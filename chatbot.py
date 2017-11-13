@@ -113,9 +113,13 @@ def fail2ban(cmd: str, *args: [str]) -> str:
                              stderr=PIPE).communicate()
         result = ''
         if out:
-            result += '_stdout:_ {}'.format(out.decode().strip())
+            jails = []
+            for line in out.decode().splitlines(keepends=False):
+                if 'Jail list:' in line:
+                    jails = line.split()[4:]
+            result += 'Jails ({}): {}'.format(len(jails), ' '.join(jails))
         if err:
-            result += '\n_stderr:_ {}'.format(err.decode().strip())
+            result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
 
     elif args[0] == 'ban':
