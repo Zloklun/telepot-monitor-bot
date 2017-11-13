@@ -154,7 +154,7 @@ def fail2ban(cmd, *args):
             if 'Jail list:' in line:
                 jails = line.split()[4:]  # Skip '`-', 'Jail', and 'list:'
         jails = tuple(map(lambda s: s[:-1] if s.endswith(',') else s, jails))
-        config.log('fail2ban', 'Jails are ', jails)
+        config.log('Jails are ', jails, category='fail2ban checkip')
         for jail in jails:
             if ip in fail2ban('fail2ban', 'status', jail):
                 return 'IP *{}* is banned by *{}*'.format(ip, jail)
