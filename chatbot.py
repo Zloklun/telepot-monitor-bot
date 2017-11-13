@@ -80,8 +80,8 @@ def fail2ban(cmd, *args):
     usage = 'Usage: {} \[command]\n' \
             'Supported commands are:\n' \
             '  status — returns current fail2ban status\n' \
-            '  ban [ip] [jail] — bans ip in given jail\n' \
-            '  unban [ip] [jail] — bans ip in given jail\n' \
+            '  ban <ip> <jail> — bans ip in given jail\n' \
+            '  unban <ip> <jail> — bans ip in given jail\n' \
             ''.format(cmd)
     from subprocess import Popen, PIPE, DEVNULL
 

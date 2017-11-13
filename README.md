@@ -33,3 +33,9 @@ All commands support `help` as argument, e.g. `/uptime help`.
     Units must be one of `s` (seconds), `m` (minutes), 
     `h` (hours), `d` (days) and `w` (weeks). `units` value
     defaults to `d`.
+* `/fail2ban` — executes `fail2ban-client` with some arguments:
+    * `/fail2ban status` is same as `fail2ban-client status`;
+    * `/fail2ban ban <ip> <jail>` is same as
+        `fail2ban-client set <jail> banip <ip>`;
+    * `/fail2ban unban <ip> <jail>` is same as
+        `fail2ban-client set <jail> unbanip <ip>`.
