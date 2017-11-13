@@ -75,8 +75,7 @@ def uptime(cmd, *args):
     return usage
 
 
-def fail2ban(cmd, *args):
-    """Fail2Ban commands"""
+def fail2ban(cmd: str, *args: [str]) -> str:
     usage = 'Usage: {} \[command]\n' \
             'Supported commands are:\n' \
             '  status  — returns current fail2ban status\n' \
