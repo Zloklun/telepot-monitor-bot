@@ -108,14 +108,12 @@ def fail2ban(cmd: str, *args: [str]) -> str:
                              stderr=PIPE).communicate()
             lines = out.decode().splitlines(keepends=False)
             cur_ban_count = lines[-3][len('   |- Currently banned: '):]
-            total_ban_count = lines[-2][len('   |- Total banned:     '):]
             addresses = lines[-1][len('   `- Banned IP list:   '):]\
                 .replace(' ', ', ')
-            result = 'Jail: _{}_\n' \
-                     'Total banned: _{}_\n' \
-                     'Currently banned: _{}_\n' \
+            result = 'Jail: *{}*\n' \
+                     'Currently banned: *{}*\n' \
                      'Banned: {}' \
-                     ''.format(jail, total_ban_count, cur_ban_count, addresses)
+                     ''.format(jail, cur_ban_count, addresses)
         else:
             out, err = Popen([binary, 'status'],
                              shell=False,
