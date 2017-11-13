@@ -94,7 +94,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         binary = binary.decode().strip()
     else:
         return 'fail2ban-client does _not_ exist'
-    if not args:
+    if not args or args[0] == 'help':
         return usage
 
     if args[0] == 'status':
