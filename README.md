@@ -1,7 +1,7 @@
 zlobot
 ======
 
-Simple bot for monitoring my server rafikov.me
+Simple bot for monitoring private server
 
 Config files
 ================
