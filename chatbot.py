@@ -106,7 +106,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
                              shell=False,
                              stdout=PIPE,
                              stderr=PIPE).communicate()
-            lines = out.splitlines(keepends=False)
+            lines = out.decode().splitlines(keepends=False)
             addresses = lines[-1][len('   `- Banned IP list:   '):]\
                 .replace(' ', ', ')
             cur_ban_count = lines[-3][len('   |- Currently banned: '):]
