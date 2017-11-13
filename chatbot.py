@@ -116,7 +116,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
             jails = []
             for line in out.decode().splitlines(keepends=False):
                 if 'Jail list:' in line:
-                    jails = line.split()[4:]
+                    jails = line.split()[3:]
             result += 'Jails ({}): {}'.format(len(jails), ' '.join(jails))
         if err:
             result += '\nstderr: *{}*'.format(err.decode().strip())
