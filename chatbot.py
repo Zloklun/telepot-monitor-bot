@@ -11,7 +11,7 @@ import config
 ADMIN_SENDERS = []
 
 
-def random_number(cmd, *args):
+def random_number(cmd: str, *args: [str]) -> str:
     """Returns random number"""
     usage = 'Usage: *{}* \[start] \[end]'.format(cmd)
     import random
@@ -41,7 +41,7 @@ def random_number(cmd, *args):
         return usage
 
 
-def uptime(cmd, *args):
+def uptime(cmd: str, *args: [str]) -> str:
     """Uptime info"""
     usage = 'Usage: {} \[units]\n' \
             'Supported units are ' \
@@ -194,11 +194,11 @@ class ChatBot(UserHandler):
         else:
             raise IdleTerminate(event['_idle']['seconds'])
 
-    def user_is_admin(self):
+    def user_is_admin(self) -> bool:
         """:returns True if current user is admin"""
         return self.user_id in config.ADMINS_LIST
 
-    async def on_chat_message(self, msg):
+    async def on_chat_message(self, msg) -> None:
         """Handles chat message"""
         content_type = glance(msg)[0]
         config.log(
@@ -217,7 +217,7 @@ class ChatBot(UserHandler):
         else:
             await self.route_command(msg['text'])
 
-    async def route_command(self, message: str):
+    async def route_command(self, message: str) -> None:
         """Routes command to appropriate function"""
         cmd, *args = message.split()
         assert isinstance(cmd, str)
@@ -239,7 +239,7 @@ class ChatBot(UserHandler):
             await self.sender.sendMessage('Wrong command')
             await self.route_command('/help')
 
-    def start(self, cmd, *args):
+    def start(self, cmd: str, *args: [str]) -> str:
         user_cmds = '/random \[start] \[end]  Prints random number\n'
         if self.user_is_admin():
             admin_cmds = '/uptime \[units]         Prints uptime\n' \
@@ -249,9 +249,8 @@ class ChatBot(UserHandler):
 
         return 'Available user commands are:\n' + user_cmds + admin_cmds
 
-    async def send_if_admin(self, message: str):
+    async def send_if_admin(self, message: str) -> None:
         """Sends message to all chats in whitelist"""
         if not self.user_is_admin():
-            return False
+            return
         await self.sender.sendMessage(message, parse_mode='Markdown')
-        return True

@@ -13,7 +13,7 @@ class InotifyEvent(pyi.ProcessEvent):
                    files,
                    category='InotifyEvent')
 
-    async def process_event(self, event, prefix):
+    async def process_event(self, event: pyi.Event, prefix: str) -> None:
         if not self.callback:
             config.log('No callback', category='InotifyEvent')
             return
@@ -27,29 +27,29 @@ class InotifyEvent(pyi.ProcessEvent):
                        category='InotifyEvent')
             return await job()
 
-    def process_default(self, event):
+    def process_default(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Default event'))
 
-    def process_IN_ATTRIB(self, event):
+    def process_IN_ATTRIB(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Attributes modified'))
 
-    def process_IN_CREATE(self, event):
+    def process_IN_CREATE(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Created'))
 
-    def process_IN_CLOSE_WRITE(self, event):
+    def process_IN_CLOSE_WRITE(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Wrote and closed'))
 
-    def process_IN_DELETE(self, event):
+    def process_IN_DELETE(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Deleted'))
 
-    def process_IN_MODIFY(self, event):
+    def process_IN_MODIFY(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Modified'))
 
-    def process_IN_MOVE_SELF(self, event):
+    def process_IN_MOVE_SELF(self, event: pyi.Event) -> None:
         config.sync_exec(self.process_event(event, 'Moved'))
 
 
-async def inotify_start(loop, files, callback=None, event_mask=None):
+async def inotify_start(loop, files: [str], callback=None, event_mask=None):
     from os.path import dirname, isdir
     files = tuple(set(map(
             lambda x: x if isdir(x) else dirname(x),

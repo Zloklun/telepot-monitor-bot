@@ -30,18 +30,16 @@ class AdminMonitor(Monitor):
         )
         config.log('__init__', category='AdminMonitor')
 
-    async def on_chat_message(self, msg):
+    async def on_chat_message(self, msg: str):
         """Handles chat message"""
         pass
 
-    async def send_to_admins(self, message: str):
+    async def send_to_admins(self, message: str) -> None:
         """Sends message to all admins"""
-        if not ADMIN_SENDERS:
-            config.log('ADMIN_SENDERS is empty', category='ChatBot')
-            return False
         for _, sender in ADMIN_SENDERS:
             await sender.sendMessage(message, parse_mode='Markdown')
-            return True
+        if not ADMIN_SENDERS:
+            config.log('ADMIN_SENDERS is empty', category='ChatBot')
 
-    async def loadavg_notify(self, loadavg):
+    async def loadavg_notify(self, loadavg: (float, float, float)) -> None:
         await self.send_to_admins('*High loadavg value*:\n' + str(loadavg))
