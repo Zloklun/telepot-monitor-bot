@@ -43,3 +43,7 @@ All commands support `help` as argument, e.g. `/uptime help`.
     * `/fail2ban unban <ip> <jail>` is same as
         `fail2ban-client set <jail> unbanip <ip>`;
     * `/fail2ban checkip <ip>` — prints whether given ip is banned.
+* `/apt` — executes some APT commands:
+    * `/apt upgradables` — returns list of upgradable packages
+        in format: «**name** : __oldver__ → __newver__»
+        (some kind of `apt list --upgradable`)
