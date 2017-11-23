@@ -5,6 +5,8 @@ from telepot import glance
 from telepot.aio.helper import UserHandler
 from telepot.exception import IdleTerminate
 
+from subprocess import Popen, PIPE, DEVNULL
+
 import config
 
 # List with tuples (admin_id, sender)
@@ -84,8 +86,6 @@ def fail2ban(cmd: str, *args: [str]) -> str:
             '  unban <ip> <jail> — bans ip in given jail\n' \
             '  checkip <ip> — prints whether given ip is banned\n' \
             ''.format(cmd)
-    from subprocess import Popen, PIPE, DEVNULL
-
     binary, _ = Popen('which fail2ban-client',
                       shell=True,
                       stdout=PIPE,
@@ -180,6 +180,61 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         return usage
 
 
+def apt(cmd: str, *args):
+    usage = 'Usage: {} \[command]\n'\
+            'Supported commands are:\n' \
+            '  upgradable — list of upgradable packages\n' \
+            '  versions <package1> [<package2> [<package3> …]] — list of '\
+            'available <package>s versions\n'\
+            ''.format(cmd)
+    if not args:
+        return usage
+
+    import apt
+
+    if args[0] == 'upgradable':
+        cache = apt.Cache()
+        cache.open()
+        result = ''
+        for pkg in cache:
+            if not pkg.is_upgradable:
+                continue
+            cur_ver = None
+            for version in pkg.versions:
+                if version.is_installed:
+                    cur_ver = version.version
+                    break
+            next_ver = pkg.candidate.version
+            result += '*{}*: {} → {}\n'.format(pkg.shortname, cur_ver, next_ver)
+        cache.close()
+        if result:
+            return 'Upgradable packages:\n' + result
+        return 'All packages are up-to-date'
+
+    if args[0] == 'versions':
+        if len(args) == 1:
+            return usage
+
+        cache = apt.Cache()
+        cache.open()
+        result = ''
+        for name in args[1:]:
+            pkg_name = name.replace('*', '').replace('_', '').replace('`', '')
+            if pkg_name not in cache:
+                result += 'Package *{}* not found\n\n'.format(pkg_name)
+                continue
+            result += 'Package *{}*:\n'.format(pkg_name)
+            package = cache[pkg_name]
+            for version in package.versions:
+                s = ('ii' if version.is_installed else '').ljust(3)
+                result += s + version.version + '\n'
+            result += '\n'
+        return result
+
+    else:
+        return usage
+
+
 class ChatBot(UserHandler):
     """Bot that handles non-admin commands"""
     def __init__(self, seed_tuple, exclude=None, *args, **kwargs):
@@ -194,6 +249,7 @@ class ChatBot(UserHandler):
         self.admin_routes = {
             '/uptime': uptime,
             '/fail2ban': fail2ban,
+            '/apt': apt,
         }
         if self.user_is_admin():
             ADMIN_SENDERS.append((self.user_id, self.sender))
@@ -262,7 +318,8 @@ class ChatBot(UserHandler):
         if self.user_is_admin():
             admin_cmds = '\nAvailable admin commands:\n'\
                          '/uptime \[units]         Prints uptime\n' \
-                         '/fail2ban \[command]     Executes fail2ban commands\n'
+                         '/fail2ban \[command]     Executes fail2ban commands\n'\
+                         '/apt \[command]          APT commands\n'
         else:
             admin_cmds = ''
 
