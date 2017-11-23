@@ -184,6 +184,7 @@ def apt(cmd: str, *args):
     usage = 'Usage: {} \[command]\n'\
             'Supported commands are:\n' \
             '  upgradable — list of upgradable packages\n' \
+            '  versions <package> — list of available <package> versions\n'\
             ''.format(cmd)
     if not args:
         return usage
@@ -208,6 +209,25 @@ def apt(cmd: str, *args):
         if result:
             return 'Upgradable packages:\n' + result
         return 'All packages are up-to-date'
+
+    if args[0] == 'versions':
+        if len(args) != 2:
+            return usage
+
+        cache = apt.Cache()
+        cache.open()
+        pkg_name = args[1].replace('*', '').replace('_', '').replace('`', '')
+        if pkg_name not in cache:
+            return 'Package *{}* not found'.format(pkg_name)
+        result = 'Package *{}*:\n'.format(pkg_name)
+        package = cache[pkg_name]
+        for version in package.versions:
+            s = ('ii' if version.is_installed else '').ljust(3)
+            result += s + version.version + '\n'
+        return result
+
+    else:
+        return usage
 
 
 class ChatBot(UserHandler):
