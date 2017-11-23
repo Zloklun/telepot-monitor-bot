@@ -3,7 +3,7 @@
 
 import asyncio as aio
 
-from misc import log
+from config import log
 
 
 def default_callback(loadavg):
