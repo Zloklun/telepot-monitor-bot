@@ -184,7 +184,8 @@ def apt(cmd: str, *args):
     usage = 'Usage: {} \[command]\n'\
             'Supported commands are:\n' \
             '  upgradable — list of upgradable packages\n' \
-            '  versions <package> — list of available <package> versions\n'\
+            '  versions <package1> [<package2> [<package3> …]] — list of '\
+            'available <package>s versions\n'\
             ''.format(cmd)
     if not args:
         return usage

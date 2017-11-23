@@ -47,6 +47,5 @@ All commands support `help` as argument, e.g. `/uptime help`.
     * `/apt upgradables` — returns list of upgradable packages
         in format: «**name** : __oldver__ → __newver__»
         (some kind of `apt list --upgradable`)
-    * `apt versions <package>` — returns all available versions
-        of a given package. If there are no such package, returns
-        error message.
+    * `apt versions <package1> [<package2> [<package3> …]]` — returns
+        all available versions of given packages.
