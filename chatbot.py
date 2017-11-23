@@ -211,19 +211,23 @@ def apt(cmd: str, *args):
         return 'All packages are up-to-date'
 
     if args[0] == 'versions':
-        if len(args) != 2:
+        if len(args) == 1:
             return usage
 
         cache = apt.Cache()
         cache.open()
-        pkg_name = args[1].replace('*', '').replace('_', '').replace('`', '')
-        if pkg_name not in cache:
-            return 'Package *{}* not found'.format(pkg_name)
-        result = 'Package *{}*:\n'.format(pkg_name)
-        package = cache[pkg_name]
-        for version in package.versions:
-            s = ('ii' if version.is_installed else '').ljust(3)
-            result += s + version.version + '\n'
+        result = ''
+        for name in args[1:]:
+            pkg_name = name.replace('*', '').replace('_', '').replace('`', '')
+            if pkg_name not in cache:
+                result += 'Package *{}* not found\n\n'.format(pkg_name)
+                continue
+            result += 'Package *{}*:\n'.format(pkg_name)
+            package = cache[pkg_name]
+            for version in package.versions:
+                s = ('ii' if version.is_installed else '').ljust(3)
+                result += s + version.version + '\n'
+            result += '\n'
         return result
 
     else:
