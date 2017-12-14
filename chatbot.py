@@ -97,7 +97,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
     if not args or args[0] == 'help':
         return usage
 
-    if args[0] == 'status':
+    if args[0].startswith('s'):
         if len(args) > 2:
             return usage
         jail = args[1] if len(args) == 2 else None
@@ -131,7 +131,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
 
-    elif args[0] == 'ban':
+    elif args[0].startswith('b'):
         if len(args) != 3:
             return usage
         ip, jail = args[1], args[2]
@@ -146,7 +146,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
 
-    elif args[0] == 'unban':
+    elif args[0].startswith('u'):
         if len(args) != 3:
             return usage
         ip, jail = args[1], args[2]
@@ -161,7 +161,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
             result += '\nstderr: *{}*'.format(err.decode().strip())
         return result
 
-    elif args[0] == 'checkip':
+    elif args[0].startswith('c'):
         if len(args) != 2:
             return usage
         ip = args[1]
@@ -180,7 +180,7 @@ def fail2ban(cmd: str, *args: [str]) -> str:
         return usage
 
 
-def apt(cmd: str, *args):
+def apt(cmd: str, *args: [str]):
     usage = 'Usage: {} \[command]\n'\
             'Supported commands are:\n' \
             '  upgradable — list of upgradable packages\n' \
@@ -192,7 +192,7 @@ def apt(cmd: str, *args):
 
     import apt
 
-    if args[0] == 'upgradable':
+    if args[0].startswith('u'):
         cache = apt.Cache()
         cache.open()
         result = ''
@@ -211,7 +211,7 @@ def apt(cmd: str, *args):
             return 'Upgradable packages:\n' + result
         return 'All packages are up-to-date'
 
-    if args[0] == 'versions':
+    if args[0].startswith('v'):
         if len(args) == 1:
             return usage
 
